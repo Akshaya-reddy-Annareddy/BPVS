@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Enrollment</title>
+</head>
+<body>
+
+<h2>Student Face Enrollment</h2>
+
+<video id="preview" width="400" autoplay muted></video>
+<br><br>
+
+<h3 id="instruction"></h3>
+
+<button onclick="startCamera()">Start Camera</button>
+<button onclick="startRecording()">Start Recording</button>
+
+<button id="uploadBtn" onclick="uploadVideo()" style="display:none;">Upload Video</button>
+<button id="retakeBtn" onclick="retakeVideo()" style="display:none;">Retake</button>
+
+<p id="status">Idle</p>
+
+<script>
+let mediaRecorder;
+let recordedChunks = [];
+let stream;
+let instructionIndex = 0;
+let instructionTimer;
+let isProcessing = false;
+
+const instructions = [
+    "Look straight",
+    "Turn your face LEFT",
+    "Turn your face RIGHT",
+    "Look UP",
+    "Look DOWN"
+];
+
+async function startCamera() {
+    try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+        document.getElementById("preview").srcObject = stream;
+        document.getElementById("status").innerText = "Camera started";
+    } catch (err) {
+        console.error(err);
+        document.getElementById("status").innerText = "Camera error";
+    }
+}
+
+function startRecording() {
+    if (isProcessing){
+        alert("Processing is in progress. Please wait...");
+        return;
+    }
+    if (!stream) {
+        alert("Start camera first");
+        return;
+    }
+
+    recordedChunks = [];
+    instructionIndex = 0;
+
+    mediaRecorder = new MediaRecorder(stream);
+
+    mediaRecorder.ondataavailable = function(event) {
+        if (event.data.size > 0) recordedChunks.push(event.data);
+    };
+
+    mediaRecorder.onstop = function() {
+        document.getElementById("status").innerText = "Video recorded successfully";
+        document.getElementById("uploadBtn").style.display = "inline";
+        document.getElementById("retakeBtn").style.display = "inline";
+    };
+
+    mediaRecorder.start();
+    showInstructions();
+}
+
+function showInstructions() {
+    document.getElementById("instruction").innerText = instructions[instructionIndex];
+
+    instructionTimer = setInterval(() => {
+        instructionIndex++;
+
+        if (instructionIndex >= instructions.length) {
+            clearInterval(instructionTimer);
+            mediaRecorder.stop();
+            return;
+        }
+
+        document.getElementById("instruction").innerText = instructions[instructionIndex];
+
+    }, 4000);
+}
+
+function enableAllButtons() {
+    document.querySelectorAll("button").forEach(btn => btn.disabled = false);
+}
+
+function lockUI() {
+    isProcessing = true;
+
+    document.querySelectorAll("button").forEach(btn => {
+        btn.style.display = "none";
+        btn.disabled = true;
+    });
+
+    document.getElementById("instruction").innerText = "Processing... Please wait";
+}
+
+function stopCamera() {
+    if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+    }
+}
+
+function retakeVideo() {
+    if (isProcessing) {
+        alert("Processing is in progress. Please wait.");
+        return;
+    }
+
+    recordedChunks = [];
+    document.getElementById("status").innerText = "Ready to record again";
+    document.getElementById("uploadBtn").style.display = "none";
+    document.getElementById("retakeBtn").style.display = "none";
+    document.getElementById("instruction").innerText = "";
+}
+
+
+async function uploadVideo() {
+    try {
+        if (isProcessing) return;
+        lockUI(); //Lock immediately
+        stopCamera(); //stop camera
+        isProcessing = true;
+
+        document.getElementById("uploadBtn").style.display = "none";
+        document.getElementById("retakeBtn").style.display = "none";
+        document.getElementById("status").innerText = "Uploading...";
+
+        const blob = new Blob(recordedChunks, { type: "video/webm" });
+        const file = new File([blob], "enrollment.webm");
+
+        const formData = new FormData();
+        formData.append("file", file);
+        
+
+        const response = await fetch("/upload-video/", {
+            method: "POST",
+            body: formData
+        });
+
+        const result = await response.json();
+        document.getElementById("status").innerText = result.message;
+        checkStatus(result.job_id);
+
+    } catch (error) {
+        console.error(error);
+        document.getElementById("status").innerText = "Upload failed";
+    }
+}
+
+async function checkStatus(jobId) {
+    const interval = setInterval(async () => {
+
+        const response = await fetch(`/status/${jobId}`);
+        const result = await response.json();
+
+        console.log("Job status:", result.status);
+
+        if (result.status === "completed") {
+            clearInterval(interval);
+            document.getElementById("status").innerText = "Face enrolled successfully";
+            alert("Face enrolled successfully");
+            isProcessing = false;
+        }
+
+        if (result.status === "failed") {
+            clearInterval(interval);
+            document.getElementById("status").innerText = "Enrollment failed";
+            isProcessing = false;
+        }
+
+    }, 3000);
+}
+
+
+</script>
+
+ </body>
+ </html>

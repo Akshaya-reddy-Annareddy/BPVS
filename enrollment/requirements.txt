@@ -1,3 +1,10 @@
 fastapi
 uvicorn
 python-multipart
+opencv-python-headless
+mtcnn
+keras-facenet
+cryptography
+qdrant-client #vector database
+tensorflow
+scipy
