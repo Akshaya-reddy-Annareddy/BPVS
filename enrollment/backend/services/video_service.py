@@ -23,6 +23,7 @@ def process_video(video_path, student_id):
     frame_paths = extract_frames(video_path)
     print(f"Step 2: Frames extracted: {len(frame_paths)}")
     accepted = 0
+    rejected = 0
     embeddings = []
 
     for path in frame_paths:
@@ -30,6 +31,7 @@ def process_video(video_path, student_id):
 
         #Skip bad frames
         if frame is None:
+            rejected += 1
             continue
 
         h, w = frame.shape[:2]
@@ -41,12 +43,14 @@ def process_video(video_path, student_id):
         face = get_face(frame)
 
         if face is None:
+            rejected += 1
             continue
         
         print("Step 4: Generating embeddings...")
 
         emb = get_embedding(face)
         if emb is None:
+            rejected += 1
             continue
         
         if emb is not None:
@@ -54,7 +58,7 @@ def process_video(video_path, student_id):
             embeddings.append(emb)
             accepted += 1
 
-        print("Accepted frames:", accepted)
+        print(f"Accepted frames: {accepted}, Rejected: {rejected}")
 
         delete_file(path)
 

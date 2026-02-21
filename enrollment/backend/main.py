@@ -65,6 +65,10 @@ def process_video_background(video_path, student_id, job_id):
 def serve_index():
     return FileResponse("../frontend/index.html")
 
+@app.get("/attendance")
+def serve_attendance():
+    return FileResponse("../frontend/attendance.html")
+
 @app.on_event("startup")
 def startup_event():
     init_collection()
@@ -90,3 +94,5 @@ async def upload_video(background_tasks: BackgroundTasks, file: UploadFile = Fil
 def get_status(job_id: str):
     status = job_status.get(job_id, "not_found")
     return {"status": status}
+
+

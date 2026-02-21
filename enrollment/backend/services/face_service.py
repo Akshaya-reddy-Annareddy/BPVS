@@ -9,8 +9,10 @@ def is_blurry(image, threshold=100):
 
 def get_face(frame):
     try:
+        rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         results = detector.detect_faces(frame)
     except Exception:
+        print("MTCNN error:")
         return None
     
     if len(results) == 0:
@@ -24,16 +26,17 @@ def get_face(frame):
 
     face = frame[y:y+h, x:x+w]
 
-    # Reject invalid faces
+    # Reject invalid faces only
     if face is None or face.size == 0:
         return None
 
-    # Reject very small faces
-    if face.shape[0] < 80 or face.shape[1] < 80:
+    # Allow smaller faces (webcam friendly)
+    if face.shape[0] < 40 or face.shape[1] < 40:
         return None
 
-    # Reject blurry faces
-    if is_blurry(face):
+    # Make blur check less strict
+    if is_blurry(face, threshold=30):  
         return None
+
 
     return face
