@@ -145,8 +145,13 @@ async function uploadVideo() {
             type: "video/webm"
         });
 
-        const admissionId = localStorage.getItem("admission_id") || "23CAM1001";
-        // temporary (later from login)
+        const admissionId = localStorage.getItem("admission_id");
+        
+        if (!admissionId){
+            alert("Please login first");
+            window.location.href = "/auth.html";
+            return;
+        }
         console.log("Sending admission_id:", admissionId);
 
         const formData = new FormData();

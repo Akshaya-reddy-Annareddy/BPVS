@@ -16,8 +16,18 @@ Including another URLconf
 """
 
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, include
+from .views import home, auth_page, attendance_page
 
 urlpatterns = [
-    path("admin/", admin.site.urls),
+    path('admin/', admin.site.urls),
+
+    # Frontend Pages
+    path('', home),                 # http://127.0.0.1:8000/
+    path('auth/', auth_page),       # http://127.0.0.1:8000/auth/
+    path('attendance/', attendance_page), #http://127.0.0.1:8000/attendance/
+
+    # API Routes
+    path('accounts/', include('accounts.urls')),
 ]
+
