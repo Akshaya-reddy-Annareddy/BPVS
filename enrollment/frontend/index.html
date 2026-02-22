@@ -140,11 +140,18 @@ async function uploadVideo() {
         document.getElementById("status").innerText = "Uploading...";
 
         const blob = new Blob(recordedChunks, { type: "video/webm" });
-        const file = new File([blob], "enrollment.webm");
+        // Important: include MIME type explicitly
+        const file = new File([blob], "enrollment.webm", {
+            type: "video/webm"
+        });
+
+        const admissionId = localStorage.getItem("admission_id") || "23CAM1001";
+        // temporary (later from login)
+        console.log("Sending admission_id:", admissionId);
 
         const formData = new FormData();
         formData.append("file", file);
-        
+        formData.append("admission_id", admissionId);
 
         const response = await fetch("/upload-video/", {
             method: "POST",

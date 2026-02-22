@@ -2,6 +2,7 @@ from qdrant_client import QdrantClient
 from qdrant_client.models import VectorParams, Distance
 from qdrant_client.models import PointStruct
 from services.encryption_service import encrypt_embedding
+import uuid
 
 client = QdrantClient(":memory:")  # local testing
 
@@ -20,16 +21,18 @@ def init_collection():
             ),
         )
 
-def store_embedding(student_id, embedding):
+def store_embedding(admission_id, embedding):
     init_collection()
 
     encrypted_embedding = encrypt_embedding(embedding)
 
+    unique_id = str(uuid.uuid4())  # Generate valid UUID for Qdrant
+
     point = PointStruct(
-        id=student_id,
+        id=unique_id,  # FIX: use UUID instead of admission_id
         vector=embedding.tolist(),  # keep vector for similarity
         payload={
-            "student_id": student_id,
+            "admission_id": admission_id,  # keep your real student ID here
             "encrypted": encrypted_embedding.decode("utf-8")
         }
     )
@@ -38,5 +41,3 @@ def store_embedding(student_id, embedding):
         collection_name="faces",
         points=[point]
     )
-
-

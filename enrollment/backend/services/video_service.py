@@ -16,7 +16,7 @@ def cleanup_files(video_path, frames_folder="frames"):
     if os.path.exists(frames_folder):
         shutil.rmtree(frames_folder)
 
-def process_video(video_path, student_id):
+def process_video(video_path, admission_id):
 
     print("Step 1: Starting video processing")
 
@@ -69,7 +69,7 @@ def process_video(video_path, student_id):
     avg_embedding = average_embeddings(embeddings)
 
     print("Step 7: Storing embedding...")
-    store_embedding(student_id, avg_embedding)
+    store_embedding(admission_id, avg_embedding)
 
     print("Step 8: Done storing")
     cleanup_files(video_path)

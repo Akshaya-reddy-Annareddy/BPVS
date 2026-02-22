@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi import FastAPI, File, UploadFile
+from fastapi import FastAPI, File, UploadFile, Form
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
@@ -40,10 +40,10 @@ def extract_frames(video_path, output_folder="frames"):
 
     cap.release()
 
-def process_video_background(video_path, student_id, job_id):
+def process_video_background(video_path, admission_id, job_id):
     try:
-        print("Processing started...")
-        success = process_video(video_path, student_id)
+        print(f"Processing started for student: {admission_id}")
+        success = process_video(video_path, admission_id)
 
         if success:
             print("Processing completed successfully")
@@ -75,8 +75,14 @@ def startup_event():
     
 # Upload endpoint
 @app.post("/upload-video/")
-async def upload_video(background_tasks: BackgroundTasks, file: UploadFile = File(...)):
-
+async def upload_video(
+    background_tasks: BackgroundTasks,
+    file: UploadFile = File(...),
+    admission_id: str = Form(...)
+):
+    print("DEBUG: file received =", file.filename)
+    print("DEBUG: admission_id received =", admission_id)
+    
     video_path = f"uploads/{file.filename}"
     os.makedirs("uploads", exist_ok=True)
 
@@ -86,9 +92,18 @@ async def upload_video(background_tasks: BackgroundTasks, file: UploadFile = Fil
     job_id = str(uuid.uuid4())
     job_status[job_id] = "processing"
 
-    background_tasks.add_task(process_video_background, video_path, 1, job_id)
+    # PASS admission_id instead of hardcoded 1
+    background_tasks.add_task(
+        process_video_background,
+        video_path,
+        admission_id,  # <-- IMPORTANT CHANGE
+        job_id
+    )
 
-    return {"job_id": job_id, "message": "Upload successful. Processing started."}
+    return {
+        "job_id": job_id,
+        "message": "Upload successful. Processing started."
+    }
 
 @app.get("/status/{job_id}")
 def get_status(job_id: str):

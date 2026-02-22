@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Smart Attendance System</title>
+</head>
+<body>
+
+<h2>AI Face Attendance</h2>
+
+<video id="preview" width="400" autoplay muted></video>
+<br><br>
+
+<button id="startBtn" onclick="startCamera()">Start Camera</button>
+<button id="markBtn" onclick="markAttendance()" disabled>Mark Attendance</button>
+
+<p id="status">Idle</p>
+
+<script>
+let stream = null;
+let isProcessing = false;
+
+async function startCamera() {
+    try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        document.getElementById("preview").srcObject = stream;
+        document.getElementById("status").innerText = "Camera started";
+        document.getElementById("markBtn").disabled = false;
+    } catch (err) {
+        console.error(err);
+        document.getElementById("status").innerText = "Camera access denied";
+    }
+}
+
+function captureFrame() {
+    const video = document.getElementById("preview");
+    const canvas = document.createElement("canvas");
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    return new Promise(resolve => {
+        canvas.toBlob(blob => {
+            resolve(blob);
+        }, "image/jpeg");
+    });
+}
+
+async function markAttendance() {
+    if (isProcessing) return;
+    isProcessing = true;
+
+    document.getElementById("status").innerText = "Capturing face...";
+    document.getElementById("startBtn").disabled = true;
+    document.getElementById("markBtn").disabled = true;
+
+    try {
+        const imageBlob = await captureFrame();
+
+        const formData = new FormData();
+        formData.append("file", imageBlob, "attendance.jpg");
+
+        document.getElementById("status").innerText = "Processing attendance...";
+
+        const response = await fetch("/mark-attendance/", {
+            method: "POST",
+            body: formData
+        });
+
+        const result = await response.json();
+        document.getElementById("status").innerText = result.message;
+
+    } catch (error) {
+        console.error(error);
+        document.getElementById("status").innerText = "Attendance failed";
+    }
+
+    isProcessing = false;
+    document.getElementById("startBtn").disabled = false;
+    document.getElementById("markBtn").disabled = false;
+}
+</script>
+
+</body>
+</html>
