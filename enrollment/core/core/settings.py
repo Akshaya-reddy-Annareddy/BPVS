@@ -121,4 +121,4 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 
-AUTH_USER_MODEL = 'accounts.Student'
+AUTH_USER_MODEL = 'accounts.User'
