@@ -103,3 +103,28 @@ def login_view(request):
 
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
+
+@csrf_exempt
+def mark_face_enrolled(request):
+    if request.method != "POST":
+        return JsonResponse({"error": "POST required"}, status=400)
+
+    try:
+        data = json.loads(request.body)
+        admission_id = data.get("admission_id")
+
+        if not admission_id:
+            return JsonResponse({"error": "Admission ID required"}, status=400)
+
+        user = User.objects.filter(admission_id=admission_id, role="student").first()
+
+        if not user:
+            return JsonResponse({"error": "Student not found"}, status=404)
+
+        user.face_enrolled = True
+        user.save()
+
+        return JsonResponse({"message": "Face enrollment status updated"})
+
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)

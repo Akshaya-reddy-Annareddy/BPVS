@@ -8,3 +8,5 @@ cryptography
 qdrant-client #vector database
 tensorflow
 scipy
+django
+djangorestframework

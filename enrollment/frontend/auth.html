@@ -160,22 +160,31 @@ async function login() {
 
     const result = await response.json();
 
-    if (result.message) {
+    if (response.ok) {
         document.getElementById("status").innerText = "Login successful!";
 
-        // Save session data
+        // Save session data (VERY IMPORTANT)
         localStorage.setItem("user_id", result.user_id);
         localStorage.setItem("role", result.role);
-        localStorage.setItem("face_enrolled", result.face_enrolled);
+        localStorage.setItem("admission_id", result.user_id);
 
-        // Redirect logic (VERY IMPORTANT for next steps)
+        // FINAL ENFORCEMENT LOGIC (STEP 3 CORE)
         if (result.role === "student") {
-            window.location.href = "/";
-        } else if (result.role === "lecturer") {
-            alert("Lecturer dashboard coming next step");
-        } else {
-            alert("Admin dashboard coming next step");
+            if (result.face_enrolled === false) {
+                alert("Face enrollment is mandatory before accessing attendance.");
+                window.location.href = "/";  // Enrollment page (index.html)
+            } else {
+                // Now allow attendance access
+                window.location.href = `/attendance/?user_id=${result.user_id}`;
+            }
+        } 
+        else if (result.role === "lecturer") {
+            alert("Lecturer dashboard (next phase)");
+        } 
+        else {
+            alert("Admin dashboard (next phase)");
         }
+
     } else {
         document.getElementById("status").innerText = result.error;
     }

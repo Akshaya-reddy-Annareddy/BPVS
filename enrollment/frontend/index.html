@@ -158,7 +158,7 @@ async function uploadVideo() {
         formData.append("file", file);
         formData.append("admission_id", admissionId);
 
-        const response = await fetch("/upload-video/", {
+        const response = await fetch("https://fictional-space-adventure-975www67xxr427vv5-8001.app.github.dev/upload-video/", {
             method: "POST",
             body: formData
         });
@@ -176,7 +176,7 @@ async function uploadVideo() {
 async function checkStatus(jobId) {
     const interval = setInterval(async () => {
 
-        const response = await fetch(`/status/${jobId}`);
+        const response = await fetch(`http://fictional-space-adventure-975www67xxr427vv5-8001/status/${jobId}`);
         const result = await response.json();
 
         console.log("Job status:", result.status);

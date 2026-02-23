@@ -11,6 +11,7 @@ import cv2
 from services.video_service import process_video
 from services.vector_service import init_collection
 import uuid
+import requests
 
 app = FastAPI(root_path="")
 job_status = {}
@@ -47,6 +48,18 @@ def process_video_background(video_path, admission_id, job_id):
 
         if success:
             print("Processing completed successfully")
+
+            # NEW: Notify Django that face is enrolled
+            try:
+                requests.post(
+                    "http://127.0.0.1:8000/accounts/mark-face-enrolled/",
+                    json={"admission_id": admission_id},
+                    timeout=5
+                )
+                print("Django face_enrolled updated")
+            except Exception as e:
+                print("Failed to update Django face status:", e)
+
             job_status[job_id] = "completed"
         else:
             print("Processing failed")
