@@ -15,6 +15,7 @@ import requests
 from services.liveness_service import PassiveLivenessDetector
 import numpy as np
 from datetime import datetime
+import pytz
 
 def send_attendance_to_django(admission_id):
     try:
@@ -201,7 +202,16 @@ async def verify_face(files: list[UploadFile] = File(...)):
             admission_id = match["admission_id"]
 
             # Send attendance to Django
-            send_attendance_to_django(admission_id)
+            ist = pytz.timezone("Asia/Kolkata")
+            today = datetime.now(ist).date()
+
+            cache_key = f"{admission_id}_AI_{today}"
+
+            if cache_key not in attendance_cache:
+                send_attendance_to_django(admission_id)
+                attendance_cache[cache_key] = True
+            else:
+                print("Duplicate recognition skipped (FastAPI cache)")
 
         if match is None:
             return {

@@ -13,3 +13,4 @@ djangorestframework
 mediapipe
 numpy
 scikit-learn
+pytz
