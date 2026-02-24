@@ -1,10 +1,9 @@
 import cv2
 import numpy as np
 from services.embedding_service import get_embedding
-from services.vector_service import client
+from services.vector_service import client, COLLECTION_NAME
 
-COLLECTION_NAME = "faces"
-SIMILARITY_THRESHOLD = 0.65  # adjust later for accuracy
+SIMILARITY_THRESHOLD = 0.6  # or 0.7 for strict college system
 
 def recognize_face(frame):
     """
@@ -40,7 +39,10 @@ def recognize_face(frame):
             return None, "Low confidence match"
 
         admission_id = best_match.payload["admission_id"]
-        return admission_id, "Match successful"
+        return {
+            "admission_id":admission_id,
+            "score":score
+        }, "Match successful"
 
     except Exception as e:
         print("Recognition Error:", e)

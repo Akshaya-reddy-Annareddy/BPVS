@@ -4,7 +4,7 @@ from qdrant_client.models import PointStruct
 from services.encryption_service import encrypt_embedding
 import uuid
 
-client = QdrantClient(":memory:")  # local testing
+client = QdrantClient(path="./qdrant_data")  # local testing
 
 COLLECTION_NAME = "faces"
 
@@ -41,3 +41,25 @@ def store_embedding(admission_id, embedding):
         collection_name="faces",
         points=[point]
     )
+
+def search_embedding(query_embedding, threshold=0.6):
+    init_collection()
+
+    search_result = client.search(
+        collection_name=COLLECTION_NAME,
+        query_vector=query_embedding.tolist(),
+        limit=1
+    )
+
+    if not search_result:
+        return None
+
+    best_match = search_result[0]
+
+    if best_match.score < threshold:
+        return None
+
+    return {
+        "admission_id": best_match.payload["admission_id"],
+        "score": best_match.score
+    }

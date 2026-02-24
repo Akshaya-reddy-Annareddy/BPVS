@@ -25,7 +25,7 @@ urlpatterns = [
     # Frontend Pages
     path('', home),                 # http://127.0.0.1:8000/
     path('auth/', auth_page),       # http://127.0.0.1:8000/auth/
-    path('attendance/', attendance_page), #http://127.0.0.1:8000/attendance/
+    path('attendance/', include("attendance.urls")), #http://127.0.0.1:8000/attendance/
 
     # API Routes
     path('accounts/', include('accounts.urls')),

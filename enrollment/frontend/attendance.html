@@ -51,35 +51,29 @@ async function markAttendance() {
     if (isProcessing) return;
     isProcessing = true;
 
-    document.getElementById("status").innerText = "Capturing face...";
-    document.getElementById("startBtn").disabled = true;
-    document.getElementById("markBtn").disabled = true;
+    document.getElementById("status").innerText = "Checking liveness...";
 
-    try {
-        const imageBlob = await captureFrame();
+    const formData = new FormData();
 
-        const formData = new FormData();
-        formData.append("file", imageBlob, "attendance.jpg");
-
-        document.getElementById("status").innerText = "Processing attendance...";
-
-        const response = await fetch("/mark-attendance/", {
-            method: "POST",
-            body: formData
-        });
-
-        const result = await response.json();
-        document.getElementById("status").innerText = result.message;
-
-    } catch (error) {
-        console.error(error);
-        document.getElementById("status").innerText = "Attendance failed";
+    for (let i = 0; i < 6; i++) {  // ~2 seconds
+        const blob = await captureFrame();
+        formData.append("files", blob, `frame_${i}.jpg`);
+        await new Promise(r => setTimeout(r, 300));
     }
 
+    document.getElementById("status").innerText = "Verifying face...";
+
+    const response = await fetch("http://127.0.0.1:8001/verify-face/", {
+        method: "POST",
+        body: formData
+    });
+
+    const result = await response.json();
+    document.getElementById("status").innerText = result.message;
+
     isProcessing = false;
-    document.getElementById("startBtn").disabled = false;
-    document.getElementById("markBtn").disabled = false;
 }
+
 </script>
 
 </body>

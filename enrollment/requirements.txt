@@ -10,3 +10,6 @@ tensorflow
 scipy
 django
 djangorestframework
+mediapipe
+numpy
+scikit-learn

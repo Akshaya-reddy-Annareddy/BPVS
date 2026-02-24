@@ -122,3 +122,6 @@ USE_TZ = True
 STATIC_URL = "static/"
 
 AUTH_USER_MODEL = 'accounts.User'
+
+TIME_ZONE = 'Asia/Kolkata'
+USE_TZ = True

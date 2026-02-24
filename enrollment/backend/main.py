@@ -1,4 +1,3 @@
-from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi import FastAPI, File, UploadFile, Form
 from fastapi.responses import HTMLResponse
@@ -9,12 +8,35 @@ import shutil
 import os
 import cv2
 from services.video_service import process_video
-from services.vector_service import init_collection
+from services.vector_service import init_collection, search_embedding
+from services.embedding_service import get_embedding
 import uuid
 import requests
+from services.liveness_service import PassiveLivenessDetector
+import numpy as np
+from datetime import datetime
 
+def send_attendance_to_django(admission_id):
+    try:
+        response = requests.post(
+            "http://127.0.0.1:8000/attendance/mark/",
+            json={
+                "admission_id": admission_id,
+                "subject_name": "AI",      # temporary (later dynamic)
+                "lecturer_id": "L001"     # temporary
+            },
+            timeout=5
+        )
+        print("Attendance API Response:", response.json())
+    except Exception as e:
+        print("Attendance API Error:", e)
+
+liveness_detector = PassiveLivenessDetector()
 app = FastAPI(root_path="")
 job_status = {}
+
+# Prevent duplicate API calls (per session)
+attendance_cache = {}  # key: (admission_id, subject, date)
 
 app.add_middleware(
     CORSMiddleware,
@@ -123,4 +145,77 @@ def get_status(job_id: str):
     status = job_status.get(job_id, "not_found")
     return {"status": status}
 
+@app.post("/verify-face/")
+async def verify_face(files: list[UploadFile] = File(...)):
+    try:
+        frames = []
+        blink_detected = False
+        best_frame = None
+        best_sharpness = 0
 
+        for file in files:
+            contents = await file.read()
+            nparr = np.frombuffer(contents, np.uint8)
+            frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+
+            if frame is None:
+                continue
+
+            # Liveness check
+            is_live, _ = liveness_detector.detect_liveness(frame)
+            if is_live:
+                blink_detected = True
+
+            # Sharpness check (Laplacian variance)
+            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            sharpness = cv2.Laplacian(gray, cv2.CV_64F).var()
+
+            if sharpness > best_sharpness:
+                best_sharpness = sharpness
+                best_frame = frame
+
+        if not blink_detected:
+            return {
+                "status": "spoof_detected",
+                "message": "Liveness failed"
+            }
+
+        if best_frame is None:
+            return {
+                "status": "error",
+                "message": "No valid frame"
+            }
+
+        # Generate embedding from best frame
+        embedding = get_embedding(best_frame)
+
+        if embedding is None:
+            return {
+                "status": "no_face",
+                "message": "Face not detected"
+            }
+
+        match = search_embedding(embedding)
+
+        if match:
+            admission_id = match["admission_id"]
+
+            # Send attendance to Django
+            send_attendance_to_django(admission_id)
+
+        if match is None:
+            return {
+                "status": "unknown",
+                "message": "Face not recognized"
+            }
+
+        return {
+            "status": "recognized",
+            "admission_id": match["admission_id"],
+            "confidence": float(match["score"]),
+            "message": "Attendance verified and stored"
+        }
+
+    except Exception as e:
+        print("Verification error:", e)
+        return {"status": "error", "message": str(e)}
