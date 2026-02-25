@@ -65,7 +65,8 @@ async function markAttendance() {
 
     const response = await fetch("http://127.0.0.1:8001/verify-face/", {
         method: "POST",
-        body: formData
+        body: formData,
+        signal: AbortSignal.timeout(100000) // 10 sec safety
     });
 
     const result = await response.json();

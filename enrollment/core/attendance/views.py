@@ -6,7 +6,7 @@ from .models import AttendanceRecord
 from datetime import datetime
 from django.utils import timezone
 import json
-
+from django.shortcuts import render
 
 def calculate_year(admission_id):
     try:
@@ -21,6 +21,8 @@ def calculate_year(admission_id):
 def get_course_code(admission_id):
     return admission_id[2:5]  # 23CAM1001 -> CAM
 
+def attendance_page(request):
+    return render(request, "attendance.html")
 
 @csrf_exempt
 def mark_attendance(request):
