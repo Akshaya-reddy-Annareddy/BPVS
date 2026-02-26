@@ -22,6 +22,8 @@ class User(AbstractUser):
 
     # Face enrollment status (VERY IMPORTANT)
     face_enrolled = models.BooleanField(default=False)
+    re_enroll_used = models.BooleanField(default=False) #ONE self re-enroll allowed
+    admin_reenroll_allowed = models.BooleanField(default=False) #Admin override.
 
     def __str__(self):
         if self.role == "student":

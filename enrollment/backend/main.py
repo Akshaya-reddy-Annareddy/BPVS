@@ -114,7 +114,26 @@ async def upload_video(
 ):
     print("DEBUG: file received =", file.filename)
     print("DEBUG: admission_id received =", admission_id)
-    
+
+    # STEP 1: Check enrollment status from Django
+    try:
+        user_check = requests.get(
+            f"http://127.0.0.1:8000/accounts/check-enrollment/{admission_id}/",
+            timeout=5
+        )
+        user_data = user_check.json()
+    except Exception as e:
+        return {"status": "error", "message": "Django server not reachable"}
+
+    if user_data.get("blocked"):
+        return {
+            "status": "blocked",
+            "message": "Enrollment blocked. Contact Admin."
+        }
+
+    overwrite = user_data.get("allow_overwrite", False)
+
+    # STEP 2: Save video
     video_path = f"uploads/{file.filename}"
     os.makedirs("uploads", exist_ok=True)
 
@@ -124,12 +143,13 @@ async def upload_video(
     job_id = str(uuid.uuid4())
     job_status[job_id] = "processing"
 
-    # PASS admission_id instead of hardcoded 1
+    # PASS overwrite flag to video processor
     background_tasks.add_task(
         process_video_background,
         video_path,
-        admission_id,  # <-- IMPORTANT CHANGE
-        job_id
+        admission_id,
+        job_id,
+        overwrite  # NEW PARAM
     )
 
     return {

@@ -4,7 +4,7 @@ from qdrant_client.models import PointStruct
 from services.encryption_service import encrypt_embedding
 import uuid
 
-client = QdrantClient(path="./qdrant_data")  # local testing
+client = QdrantClient(host="localhost", port=6333)  # local testing
 
 COLLECTION_NAME = "faces"
 
@@ -20,27 +20,6 @@ def init_collection():
                 distance=Distance.COSINE
             ),
         )
-
-def store_embedding(admission_id, embedding):
-    init_collection()
-
-    encrypted_embedding = encrypt_embedding(embedding)
-
-    unique_id = str(uuid.uuid4())  # Generate valid UUID for Qdrant
-
-    point = PointStruct(
-        id=unique_id,  # FIX: use UUID instead of admission_id
-        vector=embedding.tolist(),  # keep vector for similarity
-        payload={
-            "admission_id": admission_id,  # keep your real student ID here
-            "encrypted": encrypted_embedding.decode("utf-8")
-        }
-    )
-
-    client.upsert(
-        collection_name="faces",
-        points=[point]
-    )
 
 def search_embedding(query_embedding, threshold=0.6):
     init_collection()
@@ -70,3 +49,48 @@ def search_embedding(query_embedding, threshold=0.6):
     except Exception as e:
         print("Qdrant search error:", e)
         return None
+    
+def delete_embedding_by_admission(admission_id):
+    try:
+        client.delete(
+            collection_name=COLLECTION_NAME,
+            points_selector={
+                "filter": {
+                    "must": [
+                        {
+                            "key": "admission_id",
+                            "match": {"value": admission_id}
+                        }
+                    ]
+                }
+            }
+        )
+        print(f"Old embedding deleted for {admission_id}")
+    except Exception as e:
+        print("Delete error:", e)
+
+
+def store_embedding(admission_id, embedding, overwrite=False):
+    init_collection()
+
+    # Only delete if overwrite is allowed
+    if overwrite:
+        delete_embedding_by_admission(admission_id)
+
+    encrypted_embedding = encrypt_embedding(embedding)
+
+    point = PointStruct(
+        id=str(uuid.uuid4()),
+        vector=embedding.tolist(),
+        payload={
+            "admission_id": admission_id,
+            "encrypted": encrypted_embedding.decode("utf-8")
+        }
+    )
+
+    client.upsert(
+        collection_name=COLLECTION_NAME,
+        points=[point]
+    )
+
+    print("Embedding stored successfully for:", admission_id)
