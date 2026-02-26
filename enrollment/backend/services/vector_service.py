@@ -44,22 +44,29 @@ def store_embedding(admission_id, embedding):
 
 def search_embedding(query_embedding, threshold=0.6):
     init_collection()
+    try:
+        results = client.query_points(
+            collection_name=COLLECTION_NAME,
+            query=query_embedding.tolist(),  
+            limit=1
+        )
 
-    search_result = client.search(
-        collection_name=COLLECTION_NAME,
-        query_vector=query_embedding.tolist(),
-        limit=1
-    )
+        if not results.points:
+            print("No points found in Qdrant")
+            return None
 
-    if not search_result:
+        best_match = results.points[0]
+        print("Best match score:", best_match.score)
+
+        if best_match.score < threshold:
+            print("Match below threshold")
+            return None
+
+        return {
+            "admission_id": best_match.payload["admission_id"],
+            "score": best_match.score
+        }
+
+    except Exception as e:
+        print("Qdrant search error:", e)
         return None
-
-    best_match = search_result[0]
-
-    if best_match.score < threshold:
-        return None
-
-    return {
-        "admission_id": best_match.payload["admission_id"],
-        "score": best_match.score
-    }

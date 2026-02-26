@@ -15,7 +15,7 @@ class PassiveLivenessDetector:
         Returns: (bool, message)
         """
 
-        if len(frames) < 5:
+        if len(frames) < 8:
             return False, "Not enough frames for liveness"
 
         movement_detected = False

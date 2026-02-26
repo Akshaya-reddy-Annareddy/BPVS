@@ -7,6 +7,7 @@ from datetime import datetime
 from django.utils import timezone
 import json
 from django.shortcuts import render
+from django.contrib.auth.decorators import login_required
 
 def calculate_year(admission_id):
     try:
@@ -22,7 +23,7 @@ def get_course_code(admission_id):
     return admission_id[2:5]  # 23CAM1001 -> CAM
 
 def attendance_page(request):
-    return render(request, "attendance.html")
+    return render(request, "attendance/attendance.html")
 
 @csrf_exempt
 def mark_attendance(request):
@@ -77,3 +78,4 @@ def mark_attendance(request):
 
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
+
