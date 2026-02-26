@@ -164,6 +164,7 @@ async function uploadVideo() {
         });
 
         const result = await response.json();
+        console.log("UPLOAD RESPONSE:", result);
         document.getElementById("status").innerText = result.message;
         checkStatus(result.job_id);
 
@@ -176,7 +177,7 @@ async function uploadVideo() {
 async function checkStatus(jobId) {
     const interval = setInterval(async () => {
 
-        const response = await fetch(`http://fictional-space-adventure-975www67xxr427vv5-8001/status/${jobId}`);
+        const response = await fetch(`https://fictional-space-adventure-975www67xxr427vv5-8001.app.github.dev/status/${jobId}`);
         const result = await response.json();
 
         console.log("Job status:", result.status);

@@ -27,8 +27,8 @@ class User(AbstractUser):
 
     def __str__(self):
         if self.role == "student":
-            return self.admission_id
+            return self.admission_id or self.username
         elif self.role == "lecturer":
-            return self.lecturer_id
+            return self.lecturer_id or self.username
         else:
-            return self.admin_id
+            return self.admin_id or self.username

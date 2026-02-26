@@ -18,7 +18,7 @@ from datetime import datetime
 import pytz
 import time
 
-DJANGO_API = "https://fictional-space-adventure-975www67xxr427vv5-8000.app.github.dev/"
+DJANGO_API = "http://127.0.0.1:8000/"
 
 def send_attendance_to_django(admission_id):
     try:
@@ -67,7 +67,7 @@ def extract_frames(video_path, output_folder="frames"):
 
     cap.release()
 
-def process_video_background(video_path, admission_id, job_id):
+def process_video_background(video_path, admission_id, job_id, overwrite=False):
     try:
         print(f"Processing started for student: {admission_id}")
         success = process_video(video_path, admission_id)
@@ -78,7 +78,7 @@ def process_video_background(video_path, admission_id, job_id):
             # NEW: Notify Django that face is enrolled
             try:
                 requests.post(
-                    "http://127.0.0.1:8000/accounts/mark-face-enrolled/",
+                    f"{DJANGO_API}/accounts/mark-face-enrolled/",
                     json={"admission_id": admission_id},
                     timeout=5
                 )
@@ -118,11 +118,12 @@ async def upload_video(
     # STEP 1: Check enrollment status from Django
     try:
         user_check = requests.get(
-            f"http://127.0.0.1:8000/accounts/check-enrollment/{admission_id}/",
+            f"{DJANGO_API}accounts/check-enrollment/{admission_id}/",
             timeout=5
         )
         user_data = user_check.json()
     except Exception as e:
+        print("Django connection error:", e)
         return {"status": "error", "message": "Django server not reachable"}
 
     if user_data.get("blocked"):

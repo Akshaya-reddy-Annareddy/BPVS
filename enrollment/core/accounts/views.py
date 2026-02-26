@@ -4,6 +4,7 @@ from django.contrib.auth import get_user_model, authenticate
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 import json
+from .models import User
 
 User = get_user_model()
 
@@ -128,3 +129,48 @@ def mark_face_enrolled(request):
 
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
+    
+
+
+def check_enrollment(request, admission_id):
+    try:
+        user = User.objects.get(admission_id=admission_id)
+
+        # Case 1: First time enrollment
+        if not user.face_enrolled:
+            return JsonResponse({
+                "blocked": False,
+                "allow_overwrite": False,
+                "message": "First time enrollment allowed"
+            })
+
+        # Case 2: One-time re-enroll allowed
+        elif not user.re_enroll_used:
+            return JsonResponse({
+                "blocked": False,
+                "allow_overwrite": True,
+                "message": "One-time re-enroll allowed"
+            })
+
+        # Case 3: Admin approved re-enroll
+        elif user.admin_reenroll_allowed:
+            return JsonResponse({
+                "blocked": False,
+                "allow_overwrite": True,
+                "message": "Admin approved re-enroll"
+            })
+
+        # Case 4: Completely blocked
+        else:
+            return JsonResponse({
+                "blocked": True,
+                "allow_overwrite": False,
+                "message": "Re-enrollment blocked. Contact admin."
+            })
+
+    except User.DoesNotExist:
+        return JsonResponse({
+            "blocked": True,
+            "allow_overwrite": False,
+            "message": "User not found"
+        }, status=404)
