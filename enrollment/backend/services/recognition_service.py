@@ -34,11 +34,17 @@ def recognize_face(frame):
             return None, "Embedding failed"
 
         # Search in Qdrant
-        search_result = client.search(
+        search_result = client.query_points(
             collection_name=COLLECTION_NAME,
-            query_vector=embedding.tolist(),
+            query=embedding.tolist(),
             limit=1
         )
+
+        if not search_result.points:
+            return None, "No match found"
+
+        best_match = search_result.points[0]
+        score = best_match.score
 
         if not search_result:
             return None, "No match found"

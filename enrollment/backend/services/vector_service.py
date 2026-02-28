@@ -3,8 +3,16 @@ from qdrant_client.models import VectorParams, Distance
 from qdrant_client.models import PointStruct
 from services.encryption_service import encrypt_embedding
 import uuid
+import os
 
-client = QdrantClient(host="localhost", port=6333)  # local testing
+#client = QdrantClient(host="localhost", port=6333)  # local testing
+
+# Absolute path to backend folder
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+QDRANT_PATH = os.path.join(BASE_DIR, "qdrant_storage")
+
+# Local persistent storage (NO DOCKER)
+client = QdrantClient(path=QDRANT_PATH)
 
 COLLECTION_NAME = "faces"
 
