@@ -15,15 +15,20 @@ def parse_admission_number(admission_no: str):
         course = admission_no[2:5].upper()
 
         joining_year = 2000 + year_prefix
-        current_year = datetime.now().year - joining_year
+        today = datetime.now()
+        year = today.year
+        month = today.month
 
-        if current_year < 1:
-            current_year = 1
+        #Academic year starts in June
+        if month < 6:
+            current_year = year - joining_year - 1
+        else:
+            current_year = year - joining_year 
 
         return {
             "joining_year": joining_year,
             "course": course,
-            "current_year": current_year
+            "current_year": max(current_year, 1)
         }
 
     except Exception:

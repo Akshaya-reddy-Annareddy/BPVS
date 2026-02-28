@@ -19,6 +19,10 @@
 let stream = null;
 let isProcessing = false;
 
+
+let retryCount = 0;
+const MAX_RETRY = 3;
+
 async function startCamera() {
     try {
         stream = await navigator.mediaDevices.getUserMedia({ video: true });
@@ -68,10 +72,33 @@ async function markAttendance() {
             method: "POST",
             body: formData,
             signal: AbortSignal.timeout(10000)
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === "success"){
+                alert("Attendance marked successfully");
+                retryCount = 0;
+            }
+
+            else if (data.allow_retry && retryCount < MAX_RETRY) {
+                retryCount++;
+                alert(data.reason+ "\nRetry attempt: " + retryCount);
+            }
+            else{
+                alert("Attendance failed after 3 attempts. Contact Admin.");
+                retryCount = 0;
+            }
+        })
+        .catch(error => {
+            console.error("Error:", error);
         });
 
         if (!response.ok) {
             throw new Error("AI Server not reachable");
+        }
+
+        if(result.status === "spoof_detected") {
+            document.getElementById("markBtn").disabled = true;
         }
 
         const result = await response.json();

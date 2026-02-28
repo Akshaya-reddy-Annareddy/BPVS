@@ -98,6 +98,21 @@ def process_video_background(video_path, admission_id, job_id, overwrite=False):
     if os.path.exists(video_path):
         os.remove(video_path)
 
+def send_spoof_alert_to_django(admission_id, reason):
+    try:
+        requests.post(
+            f"{DJANGO_API}/audit/spoof-log/",
+            json={
+                "admission_id": admission_id,
+                "reason": reason,
+                "timestamp": str(datetime.now()),
+                "course": "B.Tech",
+                "class_name": "CSE-A"
+            },
+            timeout=5
+        )
+    except Exception as e:
+        print("Audit Log Error:", e)
 
 # Serve enrollment page
 
@@ -194,9 +209,25 @@ async def verify_face(files: list[UploadFile] = File(...)):
         print("2.Liveness Result:", msg)
 
         if not is_live:
+            #Identify student before blocking (if possible)
+            embedding = get_embedding(frames[len(frames)//2])
+            match = search_embedding(embedding) if embedding is not None else None
+
+            if match:
+                admission_id = match["admission_id"]
+
+                #Notify Admin
+                send_spoof_alert_to_django(admission_id, msg)
+
+                #Block Student permanently
+                requests.post(
+                    f"{DJANGO_API}/accounts/block-student/",
+                    json={"admission_id": admission_id},
+                    timeout=5
+                )
             return {
                 "status": "spoof_detected",
-                "message": "Liveness failed"
+                "message": "Spoof attempt detected. Admin notified"
             }
 
         # Select sharpest frame (BEST QUALITY)
@@ -232,8 +263,8 @@ async def verify_face(files: list[UploadFile] = File(...)):
 
         if match is None:
             return {
-                "status": "unknown"
-                "message": "Face not recognized"
+                "status": "unknown",
+                "message":"Face not recognized"
             }
 
         admission_id = match["admission_id"]
