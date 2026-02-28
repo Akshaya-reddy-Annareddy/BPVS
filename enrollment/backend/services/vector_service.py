@@ -69,13 +69,35 @@ def delete_embedding_by_admission(admission_id):
     except Exception as e:
         print("Delete error:", e)
 
+def embedding_exists(admission_id):
+    try:
+        result = client.scroll(
+            collection_name=COLLECTION_NAME,
+            scroll_filter={
+                "must": [
+                    {
+                        "key": "admission_id",
+                        "match": {"value": admission_id}
+                    }
+                ]
+            },
+            limit=1
+        )
+        return len(result[0]) > 0
+    except Exception as e:
+        print("Embedding check error:", e)
+        return False
 
 def store_embedding(admission_id, embedding, overwrite=False):
     init_collection()
 
-    # Only delete if overwrite is allowed
-    if overwrite:
-        delete_embedding_by_admission(admission_id)
+    # If embedding already exists
+    if embedding_exists(admission_id):
+        if not overwrite:
+            print("Embedding already exists for:", admission_id)
+            return
+        else:
+            delete_embedding_by_admission(admission_id)
 
     encrypted_embedding = encrypt_embedding(embedding)
 

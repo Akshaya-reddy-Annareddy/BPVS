@@ -22,6 +22,7 @@ def process_video(video_path, admission_id, overwrite=False):
 
     frame_paths = extract_frames(video_path)
     print(f"Step 2: Frames extracted: {len(frame_paths)}")
+
     accepted = 0
     rejected = 0
     embeddings = []
@@ -29,15 +30,16 @@ def process_video(video_path, admission_id, overwrite=False):
     for path in frame_paths:
         frame = cv2.imread(path)
 
-        #Skip bad frames
+        # Skip bad frames
         if frame is None:
             rejected += 1
             continue
 
         h, w = frame.shape[:2]
 
-        #Reject tiny frames
-        if h<100 or w<100:
+        # Reject tiny frames
+        if h < 100 or w < 100:
+            rejected += 1
             continue
 
         face = get_face(frame)
@@ -49,6 +51,7 @@ def process_video(video_path, admission_id, overwrite=False):
         print("Step 4: Generating embeddings...")
 
         emb = get_embedding(face)
+
         if emb is None:
             rejected += 1
             continue
@@ -62,7 +65,10 @@ def process_video(video_path, admission_id, overwrite=False):
 
         delete_file(path)
 
-    if len(embeddings) == 0:
+    # REQUIRE MINIMUM EMBEDDINGS (IMPORTANT)
+    if len(embeddings) < 5:
+        print("Not enough valid embeddings collected")
+        cleanup_files(video_path)
         return False
 
     print("Step 6: Averaging embeddings...")

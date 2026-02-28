@@ -70,7 +70,7 @@ def extract_frames(video_path, output_folder="frames"):
 def process_video_background(video_path, admission_id, job_id, overwrite=False):
     try:
         print(f"Processing started for student: {admission_id}")
-        success = process_video(video_path, admission_id)
+        success = process_video(video_path, admission_id, overwrite)
 
         if success:
             print("Processing completed successfully")
@@ -232,7 +232,7 @@ async def verify_face(files: list[UploadFile] = File(...)):
 
         if match is None:
             return {
-                "status": "unknown",
+                "status": "unknown"
                 "message": "Face not recognized"
             }
 
