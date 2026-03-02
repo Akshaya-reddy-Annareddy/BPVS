@@ -8,14 +8,16 @@ from .models import User
 from django.contrib.auth import login
 from django.shortcuts import redirect
 from django.contrib.auth.decorators import login_required
+import re
 
 User = get_user_model()
 
-
 @csrf_exempt
 def signup(request):
+
     if request.method == "GET":
         return JsonResponse({"message": "Signup API is working. Use POST request."})
+
     if request.method != "POST":
         return JsonResponse({"error": "POST method required"}, status=400)
 
@@ -25,21 +27,44 @@ def signup(request):
         role = data.get("role")
         name = data.get("name")
         password = data.get("password")
-        dob = data.get("dob")
+        confirm_password = data.get("confirm_password")
 
         admission_id = data.get("admission_id")
         lecturer_id = data.get("lecturer_id")
         admin_id = data.get("admin_id")
+        dob = data.get("dob")
+
+        # Basic validation
+        if not role or not name or not password or not confirm_password:
+            return JsonResponse({"error": "All required fields must be filled"}, status=400)
+
+        if password != confirm_password:
+            return JsonResponse({"error": "Passwords do not match"}, status=400)
+
+        # Strong password validation
+        password_regex = r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$'
+        if not re.match(password_regex, password):
+            return JsonResponse({"error": "Weak password format"}, status=400)
 
         if role not in ["student", "lecturer", "admin"]:
             return JsonResponse({"error": "Invalid role"}, status=400)
 
-        if not password or not name:
-            return JsonResponse({"error": "Name and password required"}, status=400)
+        # ROLE LOGIC
 
         if role == "student":
+
             if not admission_id or not dob:
                 return JsonResponse({"error": "Admission ID and DOB required"}, status=400)
+
+            # AUTO UPPERCASE
+            admission_id = admission_id.upper()
+
+            admission_regex = r'^[0-9]{2}[A-Z]{3}[0-9]{4}$'
+            if not re.match(admission_regex, admission_id):
+                return JsonResponse({"error": "Invalid Admission ID format"}, status=400)
+
+            if User.objects.filter(username=admission_id).exists():
+                return JsonResponse({"error": "Admission ID already exists"}, status=400)
 
             user = User.objects.create_user(
                 username=admission_id,
@@ -51,8 +76,12 @@ def signup(request):
             )
 
         elif role == "lecturer":
+
             if not lecturer_id:
                 return JsonResponse({"error": "Lecturer ID required"}, status=400)
+
+            if User.objects.filter(username=lecturer_id).exists():
+                return JsonResponse({"error": "Lecturer ID already exists"}, status=400)
 
             user = User.objects.create_user(
                 username=lecturer_id,
@@ -63,8 +92,12 @@ def signup(request):
             )
 
         else:  # admin
+
             if not admin_id:
                 return JsonResponse({"error": "Admin ID required"}, status=400)
+
+            if User.objects.filter(username=admin_id).exists():
+                return JsonResponse({"error": "Admin ID already exists"}, status=400)
 
             user = User.objects.create_user(
                 username=admin_id,
@@ -76,7 +109,12 @@ def signup(request):
                 is_superuser=False
             )
 
-        return JsonResponse({"message": "User created successfully"})
+        login(request, user)
+
+        return JsonResponse({
+            "message": "User created successfully",
+            "redirect": f"/{role}-dashboard/"
+        })
 
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
