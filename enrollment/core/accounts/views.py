@@ -5,6 +5,9 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 import json
 from .models import User
+from django.contrib.auth import login
+from django.shortcuts import redirect
+from django.contrib.auth.decorators import login_required
 
 User = get_user_model()
 
@@ -78,32 +81,55 @@ def signup(request):
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
 
-
 @csrf_exempt
 def login_view(request):
-    if request.method != "POST":
-        return JsonResponse({"error": "POST method required"}, status=400)
 
-    try:
-        data = json.loads(request.body)
+    #  API LOGIN (JSON) 
+    if request.content_type == "application/json":
+        try:
+            data = json.loads(request.body)
 
-        user_id = data.get("user_id")
-        password = data.get("password")
+            user_id = data.get("user_id")
+            password = data.get("password")
 
-        user = authenticate(username=user_id, password=password)
+            user = authenticate(username=user_id, password=password)
+
+            if user is None:
+                return JsonResponse({"error": "Invalid credentials"}, status=401)
+
+            return JsonResponse({
+                "message": "Login successful",
+                "role": user.role,
+                "face_enrolled": user.face_enrolled,
+                "user_id": user.username
+            })
+
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=500)
+
+    #  DASHBOARD LOGIN (FORM) 
+    if request.method == "POST":
+        user_id = request.POST.get("user_id")
+        password = request.POST.get("password")
+
+        user = authenticate(request, username=user_id, password=password)
 
         if user is None:
-            return JsonResponse({"error": "Invalid credentials"}, status=401)
+            return render(request, "accounts/login.html", {
+                "error": "Invalid credentials"
+            })
 
-        return JsonResponse({
-            "message": "Login successful",
-            "role": user.role,
-            "face_enrolled": user.face_enrolled,
-            "user_id": user.username
-        })
+        login(request, user)
 
-    except Exception as e:
-        return JsonResponse({"error": str(e)}, status=500)
+        # ROLE BASED REDIRECT
+        if user.role == "admin":
+            return redirect("/admin-dashboard/")
+        elif user.role == "student":
+            return redirect("/student-dashboard/")
+        elif user.role == "lecturer":
+            return redirect("/lecturer-dashboard/")
+
+    return render(request, "accounts/login.html")
 
 @csrf_exempt
 def mark_face_enrolled(request):
@@ -174,3 +200,26 @@ def check_enrollment(request, admission_id):
             "allow_overwrite": False,
             "message": "User not found"
         }, status=404)
+    
+
+#Dashborad views
+
+@login_required
+def admin_dashboard(request):
+    if request.user.role != "admin":
+        return redirect("/login/")
+    return render(request, "admin/dashboard.html")
+
+
+@login_required
+def student_dashboard(request):
+    if request.user.role != "student":
+        return redirect("/login/")
+    return render(request, "student/dashboard.html")
+
+
+@login_required
+def lecturer_dashboard(request):
+    if request.user.role != "lecturer":
+        return redirect("/login/")
+    return render(request, "lecturer/dashboard.html")

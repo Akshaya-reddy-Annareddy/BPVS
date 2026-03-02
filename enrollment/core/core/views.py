@@ -1,47 +1,34 @@
-from django.http import HttpResponse
-import os
-from django.conf import settings
+from django.shortcuts import render, redirect
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth import get_user_model
+from django.http import HttpResponse
 
 User = get_user_model()
 
-# Correct root folder (enrollment/)
-PROJECT_ROOT = os.path.dirname(settings.BASE_DIR)
 
-
+# HOME PAGE
 def home(request):
-    file_path = os.path.join(PROJECT_ROOT, "frontend", "index.html")
-    with open(file_path, "r", encoding="utf-8") as f:
-        return HttpResponse(f.read())
+    return render(request, "index.html")
 
 
+
+# AUTH PAGE
 def auth_page(request):
-    file_path = os.path.join(PROJECT_ROOT, "frontend", "auth.html")
-    with open(file_path, "r", encoding="utf-8") as f:
-        return HttpResponse(f.read())
+    return render(request, "auth/auth.html")
 
 
+
+# ATTENDANCE PAGE
+@login_required
 def attendance_page(request):
-    # STEP 3 SECURITY CHECK (MANDATORY)
-    user_id = request.GET.get("user_id")
 
-    if not user_id:
-        return HttpResponse("Unauthorized access. Please login first.", status=403)
+    user = request.user
 
-    try:
-        user = User.objects.get(username=user_id)
+    # Block if student and face not enrolled
+    if user.role == "student" and not user.face_enrolled:
+        return HttpResponse(
+            "Face enrollment required before accessing attendance.",
+            status=403
+        )
 
-        # Block if face not enrolled
-        if user.role == "student" and not user.face_enrolled:
-            return HttpResponse(
-                "Face enrollment required before accessing attendance.",
-                status=403
-            )
-
-    except User.DoesNotExist:
-        return HttpResponse("User not found", status=404)
-
-    # If passed all checks → load attendance page
-    file_path = os.path.join(PROJECT_ROOT, "frontend", "attendance.html")
-    with open(file_path, "r", encoding="utf-8") as f:
-        return HttpResponse(f.read())
+    return render(request, "attendance/attendance.html")

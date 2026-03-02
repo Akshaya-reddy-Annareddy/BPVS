@@ -1,0 +1,111 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>BPVS Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        .sidebar-transition { transition: all 0.3s ease; }
+    </style>
+</head>
+
+<body class="bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 min-h-screen">
+
+<div class="flex min-h-screen">
+
+    <!-- SIDEBAR -->
+    <aside id="sidebar"
+           class="sidebar-transition w-64 bg-white shadow-xl p-6 hidden md:block">
+
+        <h2 class="text-2xl font-bold text-indigo-600 mb-8">BPVS</h2>
+
+        <nav class="space-y-4">
+
+            {% if user.role == "admin" %}
+                <a href="#" class="block text-gray-700 hover:text-indigo-600">Dashboard</a>
+                <a href="#" class="block text-gray-700 hover:text-indigo-600">Courses</a>
+                <a href="#" class="block text-gray-700 hover:text-indigo-600">Lecturers</a>
+                <a href="#" class="block text-gray-700 hover:text-indigo-600">Subjects</a>
+                <a href="#" class="block text-gray-700 hover:text-indigo-600">Timetable</a>
+                <a href="#" class="block text-gray-700 hover:text-indigo-600">Audit Logs</a>
+                <a href="#" class="block text-gray-700 hover:text-indigo-600">Attendance Data</a>
+            {% endif %}
+
+            {% if user.role == "student" %}
+                <a href="#" class="block text-gray-700 hover:text-indigo-600">Dashboard</a>
+                <a href="#" class="block text-gray-700 hover:text-indigo-600">View Classes</a>
+                <a href="#" class="block text-gray-700 hover:text-indigo-600">View Attendance</a>
+                <a href="#" class="block text-gray-700 hover:text-indigo-600">Mark Attendance</a>
+                <a href="#" class="block text-gray-700 hover:text-indigo-600">Contact Admin</a>
+            {% endif %}
+
+            {% if user.role == "lecturer" %}
+                <a href="#" class="block text-gray-700 hover:text-indigo-600">Dashboard</a>
+                <a href="#" class="block text-gray-700 hover:text-indigo-600">Classes</a>
+                <a href="#" class="block text-gray-700 hover:text-indigo-600">Attendance Sheet</a>
+                <a href="#" class="block text-gray-700 hover:text-indigo-600">Contact Admin</a>
+            {% endif %}
+
+        </nav>
+    </aside>
+
+
+    <!-- MAIN AREA -->
+    <div class="flex-1 flex flex-col">
+
+        <!-- TOP NAV -->
+        <header class="bg-white shadow-md px-6 py-4 flex justify-between items-center">
+
+            <!-- Hamburger -->
+            <button id="menuBtn" class="md:hidden text-indigo-600 text-2xl">
+                ☰
+            </button>
+
+            <h1 class="text-xl font-semibold text-gray-800">
+                {% block page_title %}Dashboard{% endblock %}
+            </h1>
+
+            <!-- Profile -->
+            <div class="relative">
+                <button id="profileBtn"
+                        class="w-10 h-10 bg-indigo-600 text-white rounded-full flex items-center justify-center">
+                    {{ user.username|first|upper }}
+                </button>
+
+                <div id="profileDropdown"
+                     class="hidden absolute right-0 mt-2 w-40 bg-white shadow-lg rounded-lg py-2">
+                    <a href="#" class="block px-4 py-2 hover:bg-gray-100">Profile</a>
+                    <a href="/accounts/logout/" class="block px-4 py-2 hover:bg-gray-100 text-red-500">Logout</a>
+                </div>
+            </div>
+        </header>
+
+        <!-- CONTENT -->
+        <main class="p-6 flex-1">
+            {% block content %}{% endblock %}
+        </main>
+
+    </div>
+</div>
+
+<script>
+    const menuBtn = document.getElementById("menuBtn");
+    const sidebar = document.getElementById("sidebar");
+    const profileBtn = document.getElementById("profileBtn");
+    const profileDropdown = document.getElementById("profileDropdown");
+
+    menuBtn?.addEventListener("click", () => {
+        sidebar.classList.toggle("hidden");
+    });
+
+    profileBtn?.addEventListener("click", () => {
+        profileDropdown.classList.toggle("hidden");
+    });
+</script>
+
+</body>
+</html>
