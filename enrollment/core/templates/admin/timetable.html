@@ -1,66 +1,169 @@
 {% extends "admin/base.html" %}
 {% block content %}
 
-<main class="flex-1 overflow-y-auto p-6 md:p-10 text-white bg-slate-950">
+<main class="flex-1 overflow-y-auto p-6 md:p-10 text-white">
+
+<style>
+.glass {
+    background: rgba(255,255,255,0.06);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.15);
+}
+.glass-soft {
+    background: rgba(255,255,255,0.04);
+    backdrop-filter: blur(14px);
+}
+.hover-lift {
+    transition: all 0.3s ease;
+}
+.hover-lift:hover {
+    transform: translateY(-5px) scale(1.01);
+}
+.table-row:hover {
+    background: rgba(255,255,255,0.06);
+}
+.gradient-border {
+    position: relative;
+}
+.gradient-border::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    padding: 1px;
+    border-radius: 24px;
+    background: linear-gradient(135deg, #6366f1, #a855f7);
+    -webkit-mask:
+        linear-gradient(#000 0 0) content-box,
+        linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+            mask-composite: exclude;
+}
+</style>
 
     {% if messages %}
         {% for message in messages %}
-            <div class="mb-4 p-4 rounded-xl bg-indigo-600">
+            <div class="mb-6 p-4 rounded-2xl bg-green-500/20 text-green-400 backdrop-blur-md shadow-lg">
                 {{ message }}
             </div>
         {% endfor %}
     {% endif %}
 
-    <!-- HEADER -->
-    <div class="rounded-3xl p-8 mb-10 bg-gradient-to-r from-indigo-700 via-purple-700 to-indigo-800 shadow-2xl">
-        <h2 class="text-3xl font-bold">
-            Timetable Management & Academic Scheduling Engine
-        </h2>
+    <!-- ================= HEADER ================= -->
+    <div class="relative rounded-3xl p-10 mb-12 bg-gradient-to-r from-indigo-700 via-purple-700 to-indigo-800 shadow-2xl overflow-hidden">
+        <div class="absolute inset-0 bg-white/5 backdrop-blur-2xl"></div>
+        <div class="relative z-10">
+            <h2 class="text-4xl font-bold mb-3 tracking-wide">
+                Timetable Management
+            </h2>
+            <p class="text-white/80 text-lg">
+                Academic Scheduling & Intelligent Time Allocation System
+            </p>
+        </div>
     </div>
 
-    <!-- CSV Upload -->
-    <div class="glass rounded-3xl p-10 mb-10">
-        <form method="POST" enctype="multipart/form-data">
-            {% csrf_token %}
-            <input type="file" name="csv_file" required
-                   class="mb-4 text-white">
-            <button type="submit"
-                    class="bg-indigo-600 px-6 py-3 rounded-xl">
-                Upload Timetable
-            </button>
-        </form>
+    <!-- ================= CSV UPLOAD ================= -->
+    <div class="gradient-border rounded-3xl mb-12">
+        <div class="glass rounded-3xl p-10 shadow-2xl">
+
+            <h3 class="text-2xl font-semibold mb-6">
+                Upload Timetable CSV
+            </h3>
+
+            <form method="POST" enctype="multipart/form-data" class="space-y-6">
+                {% csrf_token %}
+
+                <div class="glass-soft rounded-2xl p-6 border border-white/10">
+                    <input type="file" name="csv_file" required
+                           class="w-full text-white file:mr-4 file:py-3 file:px-6
+                                  file:rounded-2xl file:border-0
+                                  file:bg-indigo-600 file:text-white
+                                  hover:file:bg-indigo-700 transition">
+                </div>
+
+                <button type="submit"
+                        class="px-8 py-3 rounded-2xl bg-gradient-to-r from-indigo-600 to-purple-600
+                               hover:scale-105 transition shadow-xl font-semibold">
+                    Upload Timetable
+                </button>
+
+            </form>
+
+        </div>
     </div>
 
-    <!-- Timetable Table -->
-    <div class="glass rounded-3xl p-6">
-        <table class="min-w-full text-sm">
-            <thead>
+    <!-- ================= TIMETABLE TABLE ================= -->
+    <div class="glass rounded-3xl p-8 shadow-2xl overflow-x-auto">
+
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="text-2xl font-semibold">
+                Current Timetable Records
+            </h3>
+            <span class="text-white/60 text-sm">
+                Total Entries: {{ timetables|length }}
+            </span>
+        </div>
+
+        <table class="min-w-full text-sm text-left">
+
+            <thead class="sticky top-0 bg-white/10 backdrop-blur-md text-white/70 uppercase text-xs tracking-wider">
                 <tr>
-                    <th>Course</th>
-                    <th>Subject</th>
-                    <th>Lecturer</th>
-                    <th>Day</th>
-                    <th>Time</th>
-                    <th>Room</th>
+                    <th class="py-4 px-5">Course</th>
+                    <th class="py-4 px-5">Subject</th>
+                    <th class="py-4 px-5">Lecturer</th>
+                    <th class="py-4 px-5">Day</th>
+                    <th class="py-4 px-5">Time</th>
+                    <th class="py-4 px-5">Room</th>
                 </tr>
             </thead>
-            <tbody>
+
+            <tbody class="divide-y divide-white/10">
+
                 {% for t in timetables %}
-                <tr>
-                    <td>{{ t.course.course_name }}</td>
-                    <td>{{ t.subject.subject_name }}</td>
-                    <td>{{ t.lecturer.user.get_full_name }}</td>
-                    <td>{{ t.day }}</td>
-                    <td>{{ t.start_time }} - {{ t.end_time }}</td>
-                    <td>{{ t.room_number }}</td>
+                <tr class="table-row transition duration-200">
+
+                    <td class="py-4 px-5 font-medium">
+                        {{ t.course.course_name }}
+                    </td>
+
+                    <td class="py-4 px-5">
+                        {{ t.subject.subject_name }}
+                    </td>
+
+                    <td class="py-4 px-5">
+                        {{ t.lecturer.user.get_full_name }}
+                    </td>
+
+                    <td class="py-4 px-5">
+                        <span class="px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-300 text-xs">
+                            {{ t.day }}
+                        </span>
+                    </td>
+
+                    <td class="py-4 px-5">
+                        <span class="px-3 py-1 rounded-full bg-purple-500/20 text-purple-300 text-xs">
+                            {{ t.start_time }} - {{ t.end_time }}
+                        </span>
+                    </td>
+
+                    <td class="py-4 px-5">
+                        <span class="px-3 py-1 rounded-full bg-green-500/20 text-green-300 text-xs">
+                            {{ t.room_number }}
+                        </span>
+                    </td>
+
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="6">No timetable uploaded.</td>
+                    <td colspan="6" class="py-10 text-center text-white/50">
+                        No timetable uploaded yet.
+                    </td>
                 </tr>
                 {% endfor %}
+
             </tbody>
+
         </table>
+
     </div>
 
 </main>

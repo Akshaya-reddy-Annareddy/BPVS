@@ -25,9 +25,7 @@ def send_attendance_to_django(admission_id):
         response = requests.post(
             f"{DJANGO_API}/attendance/mark/",
             json={
-                "admission_id": admission_id,
-                "subject_name": "AI",      # temporary (later dynamic)
-                "lecturer_id": "L001"     # temporary
+                "admission_id": admission_id
             },
             timeout=3 #reduce timeout for speed
         )
@@ -272,9 +270,8 @@ async def verify_face(files: list[UploadFile] = File(...)):
         # REAL COLLEGE LOGIC (One per subject per day)
         ist = pytz.timezone("Asia/Kolkata")
         today = datetime.now(ist).date()
-        subject = "AI"
 
-        cache_key = f"{admission_id}_{subject}_{today}"
+        cache_key = f"{admission_id}_{today}"
 
         if cache_key not in attendance_cache:
             send_attendance_to_django(admission_id)

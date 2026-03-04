@@ -1,29 +1,64 @@
 from django.db import models
+from django.conf import settings
 from django.utils import timezone
-
+from academics.models import Subject, Course
 
 class AttendanceRecord(models.Model):
-    admission_id = models.CharField(max_length=50, db_index=True)
-    course_code = models.CharField(max_length=10)
-    year = models.IntegerField()
-    subject_name = models.CharField(max_length=100)
-    lecturer_id = models.CharField(max_length=50)
 
-    # IMPORTANT: Separate date field for uniqueness logic
-    attendance_date = models.DateField(default=timezone.now)
+    student = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        limit_choices_to={'role': 'student'}
+    )
 
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
+
+    lecturer = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="lecturer_attendance",
+        limit_choices_to={'role': 'lecturer'}
+    )
+
+    course = models.ForeignKey(Course, on_delete=models.CASCADE)
+
+    attendance_date = models.DateField(default=timezone.localdate)
     timestamp = models.DateTimeField(default=timezone.now)
-    status = models.CharField(max_length=10, default="Present")
+
+    status = models.CharField(
+        max_length=10,
+        choices=[
+            ("Present", "Present"),
+            ("Absent", "Absent"),
+        ],
+        default="Present"
+    )
 
     class Meta:
-        # THIS LINE PREVENTS DUPLICATE ATTENDANCE (DATABASE LEVEL)
-        unique_together = ("admission_id", "subject_name", "attendance_date")
+        unique_together = ("student", "subject", "attendance_date")
 
         indexes = [
-            models.Index(fields=["admission_id"]),
+            models.Index(fields=["student"]),
             models.Index(fields=["attendance_date"]),
-            models.Index(fields=["subject_name"]),
+            models.Index(fields=["subject"]),
         ]
 
     def __str__(self):
-        return f"{self.admission_id} - {self.subject_name} - {self.attendance_date}"
+        return f"{self.student.username} - {self.subject.name} - {self.attendance_date}"
+    
+def get_attendance_percentage(student, subject):
+    total_classes = Timetable.objects.filter(
+        subject=subject,
+        course=student.course
+    ).count()
+
+    attended = AttendanceRecord.objects.filter(
+        student=student,
+        subject=subject
+    ).count()
+
+    if total_classes == 0:
+        return 0
+
+    return round((attended / total_classes) * 100, 2)

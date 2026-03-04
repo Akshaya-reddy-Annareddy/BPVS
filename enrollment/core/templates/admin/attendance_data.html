@@ -5,37 +5,69 @@
 
 {% block content %}
 
-<main class="flex-1 overflow-y-auto p-6 md:p-10 text-white">
+<main class="flex-1 overflow-y-auto px-6 md:px-10 py-8 text-white">
 
 <style>
+/* ===== Premium Glass System ===== */
 .glass{
-    background:rgba(255,255,255,0.08);
-    backdrop-filter:blur(18px);
-    border:1px solid rgba(255,255,255,0.15);
+    background:rgba(255,255,255,0.06);
+    backdrop-filter:blur(20px);
+    border:1px solid rgba(255,255,255,0.12);
+    box-shadow:0 10px 40px rgba(0,0,0,0.4);
 }
-.hover-lift{transition:.25s ease;}
-.hover-lift:hover{transform:translateY(-5px) scale(1.02);}
-.table-row:hover{background:rgba(255,255,255,0.07);}
-.card-title{font-size:1.1rem;font-weight:600;}
-canvas{display:block;width:100%;height:350px;}
+.soft-glass{
+    background:rgba(255,255,255,0.04);
+    backdrop-filter:blur(12px);
+    border:1px solid rgba(255,255,255,0.08);
+}
+.hover-lift{
+    transition:all .25s cubic-bezier(.4,0,.2,1);
+}
+.hover-lift:hover{
+    transform:translateY(-6px);
+    box-shadow:0 18px 50px rgba(0,0,0,0.5);
+}
+.gradient-border{
+    background:linear-gradient(145deg,rgba(99,102,241,.3),rgba(168,85,247,.3));
+    padding:1px;
+    border-radius:1.5rem;
+}
+.gradient-border > div{
+    border-radius:1.5rem;
+}
+.table-row:hover{
+    background:rgba(255,255,255,0.05);
+}
+canvas{
+    display:block;
+    width:100%;
+    height:380px;
+}
 </style>
 
-<!-- ================= HEADER ================= -->
-<div class="rounded-3xl p-8 mb-10 bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-700 shadow-2xl">
-    <div class="flex items-center justify-between flex-wrap gap-6">
+<!-- ================= HERO HEADER ================= -->
+<div class="relative rounded-3xl p-10 mb-12 bg-gradient-to-br from-indigo-600 via-purple-600 to-indigo-800 shadow-2xl overflow-hidden">
+
+    <div class="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_top_right,white,transparent_60%)]"></div>
+
+    <div class="relative flex flex-col md:flex-row md:items-center md:justify-between gap-6">
         <div>
-            <h2 class="text-4xl font-bold mb-2">Attendance Analytics</h2>
-            <p class="text-white/80 text-lg">Monitor attendance performance across courses and sections.</p>
+            <h2 class="text-4xl font-bold tracking-tight mb-3">
+                Attendance Intelligence
+            </h2>
+            <p class="text-white/80 text-lg max-w-2xl">
+                Deep analytical insights across courses, years and sections with performance visualization.
+            </p>
         </div>
 
         <button id="resetView"
-            class="bg-white text-indigo-700 font-semibold px-6 py-3 rounded-2xl shadow-xl hover:scale-105 transition">
+            class="bg-white text-indigo-700 font-semibold px-6 py-3 rounded-2xl shadow-xl hover:scale-105 transition-all duration-300">
             Reset View
         </button>
     </div>
 </div>
 
-<div id="levelContainer"></div>
+<div id="levelContainer" class="space-y-8"></div>
 
 </main>
 
@@ -43,38 +75,25 @@ canvas{display:block;width:100%;height:350px;}
 
 /* ==========================================================
    BACKEND READY PLACEHOLDER
-   Later replace with:
-   let courses = JSON.parse('{{ attendance_json|escapejs }}');
 ========================================================== */
 let courses = [];
-
-/* Dummy fallback (remove after backend integration) */
 if(courses.length === 0){
-    courses = [
-        {
-            name:"B.Tech IT",
-            years:[
-                {
-                    year:"1st Year",
-                    sections:[
-                        {
-                            section:"A",
-                            attendance:Array.from({length:30},(_,i)=>({
-                                date:`2026-03-${String(i+1).padStart(2,'0')}`,
-                                total:60,
-                                present:Math.floor(60*(Math.random()*0.3+0.7))
-                            }))
-                        }
-                    ]
-                }
-            ]
-        }
-    ];
+    courses = [{
+        name:"B.Tech IT",
+        years:[{
+            year:"1st Year",
+            sections:[{
+                section:"A",
+                attendance:Array.from({length:30},(_,i)=>({
+                    date:`2026-03-${String(i+1).padStart(2,'0')}`,
+                    total:60,
+                    present:Math.floor(60*(Math.random()*0.3+0.7))
+                }))
+            }]
+        }]
+    }];
 }
 
-/* ==========================================================
-   STATE
-========================================================== */
 let selectedCourse=null;
 let selectedYear=null;
 let selectedSection=null;
@@ -84,15 +103,19 @@ let selectedSection=null;
 ========================================================== */
 function renderCourses(){
     const container=document.getElementById("levelContainer");
-    container.innerHTML=`<div class="grid md:grid-cols-2 xl:grid-cols-3 gap-6"></div>`;
+    container.innerHTML=`
+        <div class="grid md:grid-cols-2 xl:grid-cols-3 gap-8"></div>
+    `;
     const grid=container.firstChild;
 
     courses.forEach(course=>{
         const card=document.createElement("div");
-        card.className="glass rounded-3xl p-6 shadow-xl hover-lift cursor-pointer";
+        card.className="gradient-border hover-lift cursor-pointer";
         card.innerHTML=`
-            <div class="card-title mb-3">${course.name}</div>
-            <p class="text-white/70">Years: ${course.years.length}</p>
+            <div class="glass p-8">
+                <h3 class="text-2xl font-semibold mb-3">${course.name}</h3>
+                <p class="text-white/70">Academic Years: ${course.years.length}</p>
+            </div>
         `;
         card.ondblclick=()=>{
             selectedCourse=course;
@@ -108,15 +131,22 @@ function renderCourses(){
 function renderYears(){
     const container=document.getElementById("levelContainer");
     container.innerHTML=`
-        <button onclick="renderCourses()" class="mb-6 px-4 py-2 bg-white/20 rounded-xl hover:bg-white/30 transition">← Back</button>
-        <div class="grid md:grid-cols-2 xl:grid-cols-3 gap-6"></div>
+        <button onclick="renderCourses()"
+            class="mb-8 px-5 py-2 bg-white/10 hover:bg-white/20 rounded-xl transition">
+            ← Back to Courses
+        </button>
+        <div class="grid md:grid-cols-2 xl:grid-cols-3 gap-8"></div>
     `;
     const grid=container.querySelector("div");
 
     selectedCourse.years.forEach(year=>{
         const card=document.createElement("div");
-        card.className="glass rounded-3xl p-6 shadow-xl hover-lift cursor-pointer";
-        card.innerHTML=`<div class="card-title">${year.year}</div>`;
+        card.className="gradient-border hover-lift cursor-pointer";
+        card.innerHTML=`
+            <div class="glass p-8">
+                <h3 class="text-xl font-semibold">${year.year}</h3>
+            </div>
+        `;
         card.ondblclick=()=>{
             selectedYear=year;
             renderSections();
@@ -131,15 +161,22 @@ function renderYears(){
 function renderSections(){
     const container=document.getElementById("levelContainer");
     container.innerHTML=`
-        <button onclick="renderYears()" class="mb-6 px-4 py-2 bg-white/20 rounded-xl hover:bg-white/30 transition">← Back</button>
-        <div class="grid md:grid-cols-2 xl:grid-cols-4 gap-6"></div>
+        <button onclick="renderYears()"
+            class="mb-8 px-5 py-2 bg-white/10 hover:bg-white/20 rounded-xl transition">
+            ← Back to Years
+        </button>
+        <div class="grid md:grid-cols-2 xl:grid-cols-4 gap-8"></div>
     `;
     const grid=container.querySelector("div");
 
     selectedYear.sections.forEach(sec=>{
         const card=document.createElement("div");
-        card.className="glass rounded-3xl p-6 shadow-xl hover-lift cursor-pointer";
-        card.innerHTML=`<div class="card-title">Section ${sec.section}</div>`;
+        card.className="gradient-border hover-lift cursor-pointer";
+        card.innerHTML=`
+            <div class="glass p-8 text-center">
+                <h3 class="text-xl font-semibold">Section ${sec.section}</h3>
+            </div>
+        `;
         card.ondblclick=()=>{
             selectedSection=sec;
             renderDashboard();
@@ -154,10 +191,15 @@ function renderSections(){
 function renderDashboard(){
     const container=document.getElementById("levelContainer");
     container.innerHTML=`
-        <button onclick="renderSections()" class="mb-6 px-4 py-2 bg-white/20 rounded-xl hover:bg-white/30 transition">← Back</button>
+        <button onclick="renderSections()"
+            class="mb-8 px-5 py-2 bg-white/10 hover:bg-white/20 rounded-xl transition">
+            ← Back to Sections
+        </button>
 
-        <div class="flex flex-wrap gap-4 mb-6">
-            <select id="viewMode" class="px-4 py-2 rounded-xl glass">
+        <div class="flex justify-between items-center mb-8 flex-wrap gap-4">
+            <h3 class="text-2xl font-semibold">Section Analytics</h3>
+            <select id="viewMode"
+                class="px-4 py-2 rounded-xl soft-glass focus:outline-none">
                 <option value="line">Line Chart</option>
                 <option value="bar">Bar Chart</option>
                 <option value="pie">Pie Chart</option>
@@ -165,9 +207,13 @@ function renderDashboard(){
             </select>
         </div>
 
-        <div id="summaryCards" class="grid md:grid-cols-4 gap-6 mb-6"></div>
-        <div id="graphContainer" class="glass rounded-3xl p-6 shadow-xl mb-6"></div>
-        <div id="tableContainer" class="glass rounded-3xl p-6 shadow-xl overflow-auto hidden"></div>
+        <div id="summaryCards" class="grid md:grid-cols-4 gap-8 mb-10"></div>
+
+        <div id="graphContainer"
+            class="glass rounded-3xl p-8 mb-10"></div>
+
+        <div id="tableContainer"
+            class="glass rounded-3xl p-8 overflow-auto hidden"></div>
     `;
 
     renderSummary();
@@ -183,15 +229,14 @@ function renderDashboard(){
 }
 
 /* ==========================================================
-   SUMMARY CARDS
+   SUMMARY
 ========================================================== */
 function renderSummary(){
     const container=document.getElementById("summaryCards");
     const data=selectedSection.attendance;
     const total=data.length;
     const avg=Math.round(data.reduce((s,d)=>s+(d.present/d.total*100),0)/total);
-
-    const present=data.filter(d=>d.present/d.total>=0.75).length;
+    const present=data.filter(d=>d.present/d.total>=75/100).length;
     const absent=total-present;
 
     container.innerHTML=`
@@ -204,34 +249,34 @@ function renderSummary(){
 
 function createStat(label,value){
     return `
-    <div class="glass rounded-3xl p-6 text-center hover-lift">
-        <p class="text-white/70 mb-2">${label}</p>
-        <p class="text-2xl font-bold">${value}</p>
+    <div class="glass p-8 text-center hover-lift rounded-3xl">
+        <p class="text-white/70 mb-3 text-sm uppercase tracking-wide">${label}</p>
+        <p class="text-3xl font-bold">${value}</p>
     </div>`;
 }
 
 /* ==========================================================
-   GRAPH ENGINE
+   GRAPH
 ========================================================== */
 function renderGraph(type){
+    if(type==="table") return;
+
     const container=document.getElementById("graphContainer");
     container.innerHTML="<canvas id='chartCanvas'></canvas>";
     const canvas=document.getElementById("chartCanvas");
     const ctx=canvas.getContext("2d");
 
     canvas.width=container.clientWidth;
-    canvas.height=350;
+    canvas.height=380;
 
     const data=selectedSection.attendance;
     const percentages=data.map(d=>Math.round(d.present/d.total*100));
-
-    if(type==="table") return;
 
     ctx.clearRect(0,0,canvas.width,canvas.height);
 
     if(type==="line"){
         ctx.strokeStyle="#8b5cf6";
-        ctx.lineWidth=2;
+        ctx.lineWidth=3;
         ctx.beginPath();
         percentages.forEach((p,i)=>{
             const x=i*(canvas.width/percentages.length);
@@ -246,7 +291,7 @@ function renderGraph(type){
             const width=canvas.width/percentages.length;
             const height=p/100*canvas.height;
             ctx.fillStyle="#6366f1";
-            ctx.fillRect(i*width,canvas.height-height,width-2,height);
+            ctx.fillRect(i*width,canvas.height-height,width-4,height);
         });
     }
 
@@ -256,13 +301,13 @@ function renderGraph(type){
 
         ctx.beginPath();
         ctx.moveTo(canvas.width/2,canvas.height/2);
-        ctx.arc(canvas.width/2,canvas.height/2,120,0,angle);
+        ctx.arc(canvas.width/2,canvas.height/2,140,0,angle);
         ctx.fillStyle="#6366f1";
         ctx.fill();
 
         ctx.beginPath();
         ctx.moveTo(canvas.width/2,canvas.height/2);
-        ctx.arc(canvas.width/2,canvas.height/2,120,angle,2*Math.PI);
+        ctx.arc(canvas.width/2,canvas.height/2,140,angle,2*Math.PI);
         ctx.fillStyle="#ef4444";
         ctx.fill();
     }
@@ -277,32 +322,32 @@ function renderTable(){
 
     container.innerHTML=`
         <table class="min-w-full text-left">
-            <thead class="sticky top-0 bg-white/10">
-                <tr class="text-white/80 uppercase text-sm">
-                    <th class="py-3 px-4">Date</th>
-                    <th class="py-3 px-4">Total</th>
-                    <th class="py-3 px-4">Present</th>
-                    <th class="py-3 px-4">Absent</th>
-                    <th class="py-3 px-4">Attendance %</th>
+            <thead class="sticky top-0 bg-white/5 backdrop-blur">
+                <tr class="uppercase text-sm text-white/70">
+                    <th class="py-4 px-6">Date</th>
+                    <th class="py-4 px-6">Total</th>
+                    <th class="py-4 px-6">Present</th>
+                    <th class="py-4 px-6">Absent</th>
+                    <th class="py-4 px-6">Attendance %</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-white/10">
                 ${data.map(d=>`
-                <tr class="table-row">
-                    <td class="py-3 px-4">${d.date}</td>
-                    <td class="py-3 px-4">${d.total}</td>
-                    <td class="py-3 px-4">${d.present}</td>
-                    <td class="py-3 px-4">${d.total-d.present}</td>
-                    <td class="py-3 px-4">${Math.round(d.present/d.total*100)}%</td>
+                <tr class="table-row transition">
+                    <td class="py-4 px-6">${d.date}</td>
+                    <td class="py-4 px-6">${d.total}</td>
+                    <td class="py-4 px-6">${d.present}</td>
+                    <td class="py-4 px-6">${d.total-d.present}</td>
+                    <td class="py-4 px-6 font-semibold">
+                        ${Math.round(d.present/d.total*100)}%
+                    </td>
                 </tr>`).join("")}
             </tbody>
         </table>
     `;
 }
 
-/* ==========================================================
-   RESET BUTTON
-========================================================== */
+/* RESET */
 document.getElementById("resetView").onclick=()=>{
     selectedCourse=null;
     selectedYear=null;

@@ -5,196 +5,145 @@
 
 {% block content %}
 
-<main class="flex-1 overflow-y-auto p-6 md:p-10 text-white">
+<div class="space-y-10">
 
-<style>
-.glass {
-    background: rgba(255,255,255,0.08);
-    backdrop-filter: blur(18px);
-    border: 1px solid rgba(255,255,255,0.15);
-}
-.hover-lift { transition: all 0.25s ease; }
-.hover-lift:hover { transform: translateY(-6px) scale(1.02); }
-.table-row:hover { background: rgba(255,255,255,0.07); }
-.badge {
-    padding: 4px 10px;
-    border-radius: 9999px;
-    font-size: 12px;
-    font-weight: 500;
-    display:inline-block;
-    margin:2px 4px 2px 0;
-}
-.modal-hidden { opacity:0; transform:scale(0.9); }
-.modal-show { opacity:1; transform:scale(1); }
-</style>
+    <!-- ================= HEADER ================= -->
+    <div class="rounded-3xl p-8 bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-700 shadow-2xl">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+            <div>
+                <h2 class="text-4xl font-bold mb-2">Subjects Management</h2>
+                <p class="text-white/80 text-lg">
+                    Manage all subjects, semesters and credits.
+                </p>
+            </div>
 
-<!-- HEADER -->
-<div class="rounded-3xl p-8 mb-10 bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-700 shadow-2xl">
-    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-        <div>
-            <h2 class="text-4xl font-bold mb-2">Subjects Management</h2>
-            <p class="text-white/80 text-lg">Manage subjects across multiple courses and lecturers.</p>
+            <a href="{% url 'add_subject' %}"
+               class="bg-white text-indigo-700 font-semibold px-6 py-3 rounded-2xl shadow-xl hover:scale-105 transition">
+                + Add Subject
+            </a>
         </div>
-        <button id="openModal"
-            class="bg-white text-indigo-700 font-semibold px-6 py-3 rounded-2xl shadow-xl hover:scale-105 transition">
-            + Add Subject
-        </button>
     </div>
-</div>
 
-<!-- STATS -->
-<div id="statsSection" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 mb-10"></div>
 
-<!-- SEARCH + FILTER -->
-<div class="flex flex-col md:flex-row md:items-center gap-4 mb-8">
-    <input id="searchInput" type="text" placeholder="Search by subject name or code..."
-        class="flex-1 px-5 py-3 rounded-2xl glass focus:outline-none focus:ring-2 focus:ring-indigo-400 placeholder-white/60">
+    <!-- ================= STATS ================= -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
 
-    <select id="semesterFilter"
-        class="px-5 py-3 rounded-2xl glass focus:outline-none focus:ring-2 focus:ring-indigo-400">
-        <option value="All">All Semesters</option>
-        <option value="1">1</option>
-        <option value="2">2</option>
-        <option value="3">3</option>
-        <option value="4">4</option>
-        <option value="5">5</option>
-        <option value="6">6</option>
-        <option value="7">7</option>
-        <option value="8">8</option>
-    </select>
+        <div class="glass p-6 rounded-3xl text-center shadow-xl">
+            <p class="text-white/60 text-sm mb-2">Total Subjects</p>
+            <p class="text-3xl font-bold">{{ subjects|length }}</p>
+        </div>
 
-    <select id="statusFilter"
-        class="px-5 py-3 rounded-2xl glass focus:outline-none focus:ring-2 focus:ring-indigo-400">
-        <option value="All">All Status</option>
-        <option value="Active">Active</option>
-        <option value="Inactive">Inactive</option>
-    </select>
-</div>
+        <div class="glass p-6 rounded-3xl text-center shadow-xl">
+            <p class="text-white/60 text-sm mb-2">Active Subjects</p>
+            <p class="text-3xl font-bold">
+                {{ subjects|dictsort:"status"|length }}
+            </p>
+        </div>
 
-<!-- HYBRID -->
-<div class="grid grid-cols-1 xl:grid-cols-2 gap-8">
+        <div class="glass p-6 rounded-3xl text-center shadow-xl">
+            <p class="text-white/60 text-sm mb-2">Total Semesters</p>
+            <p class="text-3xl font-bold">8</p>
+        </div>
 
-    <!-- CARDS -->
-    <div id="subjectCards" class="grid sm:grid-cols-2 gap-6"></div>
+        <div class="glass p-6 rounded-3xl text-center shadow-xl">
+            <p class="text-white/60 text-sm mb-2">Total Credits</p>
+            <p class="text-3xl font-bold">
+                {% with total=0 %}
+                {% for s in subjects %}
+                    {% widthratio total|add:s.credits 1 1 %}
+                {% endfor %}
+                {% endwith %}
+                —
+            </p>
+        </div>
 
-    <!-- TABLE -->
-    <div class="glass rounded-3xl shadow-2xl p-6 overflow-auto">
-        <table class="min-w-full text-left">
-            <thead class="sticky top-0 bg-white/10 backdrop-blur-md">
-                <tr class="text-white/80 uppercase text-sm">
-                    <th class="py-3 px-4">Code</th>
-                    <th class="py-3 px-4">Name</th>
-                    <th class="py-3 px-4">Semester</th>
-                    <th class="py-3 px-4">Credits</th>
-                    <th class="py-3 px-4">Courses</th>
-                    <th class="py-3 px-4">Lecturers</th>
-                    <th class="py-3 px-4">Status</th>
-                    <th class="py-3 px-4 text-center">Actions</th>
+    </div>
+
+
+    <!-- ================= TABLE ================= -->
+    <div class="glass rounded-3xl shadow-2xl p-8 overflow-x-auto">
+
+        <table class="min-w-full text-left text-white">
+
+            <thead class="bg-white/10 backdrop-blur-md">
+                <tr class="uppercase text-sm text-white/70">
+                    <th class="py-4 px-4">Code</th>
+                    <th class="py-4 px-4">Name</th>
+                    <th class="py-4 px-4">Semester</th>
+                    <th class="py-4 px-4">Credits</th>
+                    <th class="py-4 px-4">Status</th>
+                    <th class="py-4 px-4 text-center">Actions</th>
                 </tr>
             </thead>
-            <tbody id="subjectTable" class="divide-y divide-white/10"></tbody>
+
+            <tbody class="divide-y divide-white/10">
+
+                {% for subject in subjects %}
+                <tr class="hover:bg-white/5 transition">
+
+                    <td class="py-4 px-4 font-semibold">
+                        {{ subject.code }}
+                    </td>
+
+                    <td class="py-4 px-4">
+                        {{ subject.name }}
+                    </td>
+
+                    <td class="py-4 px-4">
+                        Semester {{ subject.semester }}
+                    </td>
+
+                    <td class="py-4 px-4">
+                        {{ subject.credits }}
+                    </td>
+
+                    <td class="py-4 px-4">
+                        {% if subject.status == "Active" %}
+                            <span class="px-3 py-1 text-sm rounded-full bg-green-500/20 text-green-400">
+                                Active
+                            </span>
+                        {% else %}
+                            <span class="px-3 py-1 text-sm rounded-full bg-red-500/20 text-red-400">
+                                Inactive
+                            </span>
+                        {% endif %}
+                    </td>
+
+                    <td class="py-4 px-4 text-center space-x-2">
+
+                        <a href="{% url 'edit_subject' subject.id %}"
+                           class="px-4 py-2 rounded-xl bg-indigo-500/20 hover:bg-indigo-500/30 transition">
+                            Edit
+                        </a>
+
+                        <form method="POST"
+                              action="{% url 'delete_subject' subject.id %}"
+                              class="inline">
+                            {% csrf_token %}
+                            <button type="submit"
+                                    onclick="return confirm('Delete this subject?')"
+                                    class="px-4 py-2 rounded-xl bg-red-500/20 hover:bg-red-500/30 transition">
+                                Delete
+                            </button>
+                        </form>
+
+                    </td>
+
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="py-8 text-center text-white/60">
+                        No subjects found.
+                    </td>
+                </tr>
+                {% endfor %}
+
+            </tbody>
+
         </table>
+
     </div>
+
 </div>
-
-<!-- MODAL -->
-<div id="modalOverlay"
-    class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden items-center justify-center z-50">
-
-    <div id="modalBox"
-        class="glass rounded-3xl shadow-2xl w-full max-w-lg p-8 transition-all duration-300 modal-hidden">
-
-        <h3 class="text-2xl font-semibold mb-6">Add New Subject</h3>
-
-        <form id="subjectForm" class="space-y-5">
-            {% csrf_token %}
-
-            <input type="text" id="subjectCode" placeholder="Subject Code"
-                class="w-full px-4 py-3 rounded-2xl glass focus:outline-none focus:ring-2 focus:ring-indigo-400" required>
-
-            <input type="text" id="subjectName" placeholder="Subject Name"
-                class="w-full px-4 py-3 rounded-2xl glass focus:outline-none focus:ring-2 focus:ring-indigo-400" required>
-
-            <input type="number" id="subjectCredits" placeholder="Credits"
-                class="w-full px-4 py-3 rounded-2xl glass focus:outline-none focus:ring-2 focus:ring-indigo-400" required>
-
-            <select id="subjectSemester"
-                class="w-full px-4 py-3 rounded-2xl glass focus:outline-none focus:ring-2 focus:ring-indigo-400">
-                <option value="1">Semester 1</option>
-                <option value="2">Semester 2</option>
-                <option value="3">Semester 3</option>
-                <option value="4">Semester 4</option>
-                <option value="5">Semester 5</option>
-                <option value="6">Semester 6</option>
-                <option value="7">Semester 7</option>
-                <option value="8">Semester 8</option>
-            </select>
-
-            <input type="text" id="subjectCourses" placeholder="Courses (comma separated)"
-                class="w-full px-4 py-3 rounded-2xl glass focus:outline-none focus:ring-2 focus:ring-indigo-400" required>
-
-            <input type="text" id="subjectLecturers" placeholder="Assigned Lecturers (comma separated)"
-                class="w-full px-4 py-3 rounded-2xl glass focus:outline-none focus:ring-2 focus:ring-indigo-400" required>
-
-            <select id="subjectStatus"
-                class="w-full px-4 py-3 rounded-2xl glass focus:outline-none focus:ring-2 focus:ring-indigo-400">
-                <option>Active</option>
-                <option>Inactive</option>
-            </select>
-
-            <div class="flex justify-end gap-4 pt-4">
-                <button type="button" id="closeModal"
-                    class="px-5 py-2 rounded-2xl bg-white/20 hover:bg-white/30 transition">
-                    Cancel
-                </button>
-                <button type="submit"
-                    class="px-5 py-2 rounded-2xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:scale-105 transition">
-                    Save
-                </button>
-            </div>
-        </form>
-    </div>
-</div>
-
-</main>
-
-<script>
-/* ================= BACKEND READY PLACEHOLDER ================= */
-/* Later you will replace this with:
-   let subjects = JSON.parse('{{ subjects_json|escapejs }}');
-*/
-let subjects = [];
-
-function renderStats() {
-    const total = subjects.length;
-    const active = subjects.filter(s => s.status === "Active").length;
-    const totalCourses = [...new Set(subjects.flatMap(s => s.courses))].length;
-    const totalLecturerAssignments = subjects.reduce((sum, s) => sum + s.lecturers.length, 0);
-
-    const stats = [
-        {label:"Total Subjects", value:total},
-        {label:"Active Subjects", value:active},
-        {label:"Total Courses Linked", value:totalCourses},
-        {label:"Total Lecturer Assignments", value:totalLecturerAssignments}
-    ];
-
-    const statsSection = document.getElementById("statsSection");
-    statsSection.innerHTML="";
-    stats.forEach(stat=>{
-        const card=document.createElement("div");
-        card.className="glass rounded-3xl p-6 shadow-xl hover-lift text-center";
-        card.innerHTML=`<h4 class="text-white/70 text-sm mb-2">${stat.label}</h4>
-                        <p class="text-3xl font-bold">${stat.value}</p>`;
-        statsSection.appendChild(card);
-    });
-}
-
-function updateUI(){
-    renderStats();
-}
-
-updateUI();
-
-</script>
 
 {% endblock %}

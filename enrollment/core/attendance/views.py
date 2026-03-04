@@ -8,6 +8,10 @@ from django.utils import timezone
 import json
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
+from academics.models import Subject, Course, Timetable
+from accounts.models import User
+from datetime import datetime
+import pytz
 
 def calculate_year(admission_id):
     try:
@@ -25,57 +29,69 @@ def get_course_code(admission_id):
 def attendance_page(request):
     return render(request, "attendance/attendance.html")
 
-@csrf_exempt
 def mark_attendance(request):
     if request.method != "POST":
         return JsonResponse({"error": "POST required"}, status=400)
 
     try:
         data = json.loads(request.body)
-
         admission_id = data.get("admission_id")
-        subject_name = data.get("subject_name")
-        lecturer_id = data.get("lecturer_id")
 
-        if not admission_id or not subject_name or not lecturer_id:
-            return JsonResponse({"error": "Missing fields"}, status=400)
+        if not admission_id:
+            return JsonResponse({"error": "Admission ID missing"}, status=400)
 
-        today = timezone.localdate() #IST date
+        # Get student
+        student = User.objects.get(admission_id=admission_id, role="student")
 
-        #Check: Already marked today?
-        already_marked = AttendanceRecord.objects.filter(
-            admission_id = admission_id,
-            subject_name = subject_name,
-            attendance_date=today
-        ).exists()
+        # Get current IST time
+        ist = pytz.timezone("Asia/Kolkata")
+        now = datetime.now(ist)
 
-        if already_marked:
+        current_day = now.strftime("%A")  # Monday, Tuesday...
+        current_time = now.time()
+        today = now.date()
+
+        # Find active class from timetable
+        active_class = Timetable.objects.filter(
+            course=student.course,
+            day=current_day,
+            start_time__lte=current_time,
+            end_time__gte=current_time
+        ).select_related("subject", "lecturer", "course").first()
+
+        if not active_class:
             return JsonResponse({
-                "message": "Attendance already marked for this subject today",
-                "status" : "duplicate_blocked"
-            }, status=200)
+                "status": "no_class",
+                "message": "No active class right now"
+            })
 
-        #Auto extract academic details       
-        course_code = get_course_code(admission_id)
-        year = calculate_year(admission_id)
+        # Check duplicate attendance
+        if AttendanceRecord.objects.filter(
+            student=student,
+            subject=active_class.subject,
+            attendance_date=today
+        ).exists():
+            return JsonResponse({
+                "status": "duplicate",
+                "message": "Attendance already marked"
+            })
 
+        # Create attendance
         AttendanceRecord.objects.create(
-            admission_id=admission_id,
-            course_code=course_code,
-            year=year,
-            subject_name=subject_name,
-            lecturer_id=lecturer_id,
-            attendance_date=today,
-            status="Present"
+            student=student,
+            subject=active_class.subject,
+            lecturer=active_class.lecturer,
+            course=active_class.course,
+            attendance_date=today
         )
 
         return JsonResponse({
-            "message": "Attendance stored successfully",
-            "course": course_code,
-            "year": year,
-            "date": str(today)
+            "status": "success",
+            "message": f"Attendance marked for {active_class.subject.name}"
         })
+
+    except User.DoesNotExist:
+        return JsonResponse({"error": "Student not found"}, status=404)
 
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
-

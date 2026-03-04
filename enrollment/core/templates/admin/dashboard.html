@@ -1,27 +1,167 @@
 {% extends "admin/base.html" %}
 
 {% block page_title %}Admin Dashboard{% endblock %}
-{% block header_title %}Dashboard{% endblock %}
+{% block header_title %}Admin Dashboard{% endblock %}
 
 {% block content %}
-<h2 class="text-3xl font-bold mb-6">Welcome Admin 👋</h2>
 
-<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+<div class="space-y-12">
 
-    <div class="bg-white/10 backdrop-blur-xl p-6 rounded-2xl shadow-xl hover:scale-105 transition">
-        <h3 class="text-xl font-semibold mb-2">Complaints</h3>
-        <p class="text-white/70">Student complaints will appear here.</p>
+    <!-- ================= HERO ================= -->
+    <div class="glass p-10 rounded-3xl shadow-2xl">
+
+        <h2 class="text-3xl font-bold tracking-tight">
+            Welcome Back, {{ request.user.first_name|default:"Admin" }} 👋
+        </h2>
+
+        <p class="text-white/60 mt-3 max-w-2xl">
+            Monitor biometric attendance, system security, and academic performance in real time.
+        </p>
+
     </div>
 
-    <div class="bg-white/10 backdrop-blur-xl p-6 rounded-2xl shadow-xl hover:scale-105 transition">
-        <h3 class="text-xl font-semibold mb-2">System Logs</h3>
-        <p class="text-white/70">Recent system activity logs.</p>
+
+    <!-- ================= SYSTEM METRICS ================= -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+
+        <div class="glass p-6 rounded-2xl hover:shadow-xl transition">
+            <p class="text-white/60 text-sm mb-2">Total Students</p>
+            <p class="text-3xl font-bold">{{ total_students }}</p>
+        </div>
+
+        <div class="glass p-6 rounded-2xl hover:shadow-xl transition">
+            <p class="text-white/60 text-sm mb-2">Total Lecturers</p>
+            <p class="text-3xl font-bold">{{ total_lecturers }}</p>
+        </div>
+
+        <div class="glass p-6 rounded-2xl hover:shadow-xl transition">
+            <p class="text-white/60 text-sm mb-2">Total Courses</p>
+            <p class="text-3xl font-bold">{{ total_courses }}</p>
+        </div>
+
+        <div class="glass p-6 rounded-2xl hover:shadow-xl transition">
+            <p class="text-white/60 text-sm mb-2">Today's Attendance</p>
+            <p class="text-3xl font-bold text-green-400">
+                {{ today_attendance }}
+            </p>
+        </div>
+
     </div>
 
-    <div class="bg-white/10 backdrop-blur-xl p-6 rounded-2xl shadow-xl hover:scale-105 transition">
-        <h3 class="text-xl font-semibold mb-2">Quick Stats</h3>
-        <p class="text-white/70">Overview analytics.</p>
+
+    <!-- ================= SECURITY METRICS ================= -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+
+        <div class="glass p-8 rounded-3xl">
+
+            <h3 class="text-xl font-semibold mb-6">
+                Security Monitoring
+            </h3>
+
+            <div class="space-y-6">
+
+                <div class="flex justify-between items-center">
+                    <span class="text-white/70">Failed Liveness Checks</span>
+                    <span class="text-yellow-400 font-bold text-lg">
+                        {{ failed_liveness }}
+                    </span>
+                </div>
+
+                <div class="flex justify-between items-center">
+                    <span class="text-white/70">Spoof Attempts</span>
+                    <span class="text-red-400 font-bold text-lg">
+                        {{ spoof_attempts }}
+                    </span>
+                </div>
+
+                <div class="flex justify-between items-center">
+                    <span class="text-white/70">System Health</span>
+                    <span class="text-green-400 font-semibold">
+                        Operational
+                    </span>
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- ================= QUICK ACTIONS ================= -->
+        <div class="glass p-8 rounded-3xl">
+
+            <h3 class="text-xl font-semibold mb-6">
+                Quick Actions
+            </h3>
+
+            <div class="grid grid-cols-2 gap-4">
+
+                <a href="{% url 'admin_courses' %}"
+                   class="bg-white/10 hover:bg-white/20 rounded-2xl p-4 text-center transition">
+                    Manage Courses
+                </a>
+
+                <a href="{% url 'admin_subjects' %}"
+                   class="bg-white/10 hover:bg-white/20 rounded-2xl p-4 text-center transition">
+                    Manage Subjects
+                </a>
+
+                <a href="{% url 'admin_timetable' %}"
+                   class="bg-white/10 hover:bg-white/20 rounded-2xl p-4 text-center transition">
+                    View Timetable
+                </a>
+
+                <a href="{% url 'admin_audit_logs' %}"
+                   class="bg-white/10 hover:bg-white/20 rounded-2xl p-4 text-center transition">
+                    Audit Logs
+                </a>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- ================= RECENT ACTIVITY ================= -->
+    <div class="glass p-8 rounded-3xl">
+
+        <h3 class="text-xl font-semibold mb-6">
+            Recent System Activity
+        </h3>
+
+        <div class="space-y-4">
+
+            {% for log in recent_logs %}
+            <div class="flex justify-between items-center border-b border-white/10 pb-3">
+
+                <div>
+                    <p class="font-semibold">
+                        {{ log.event_type }}
+                    </p>
+                    <p class="text-white/50 text-sm">
+                        {{ log.actor_name }} • {{ log.timestamp|date:"Y-m-d H:i" }}
+                    </p>
+                </div>
+
+                <span class="text-xs px-3 py-1 rounded-full
+                    {% if log.severity == 'Low' %}bg-blue-500/20 text-blue-400
+                    {% elif log.severity == 'Medium' %}bg-yellow-400/20 text-yellow-300
+                    {% elif log.severity == 'High' %}bg-orange-500/20 text-orange-400
+                    {% else %}bg-red-600/20 text-red-400{% endif %}">
+                    {{ log.severity }}
+                </span>
+
+            </div>
+            {% empty %}
+            <p class="text-white/40">
+                No recent activity.
+            </p>
+            {% endfor %}
+
+        </div>
+
     </div>
 
 </div>
+
 {% endblock %}

@@ -9,6 +9,10 @@ from django.contrib.auth import login
 from django.shortcuts import redirect
 from django.contrib.auth.decorators import login_required
 import re
+from academics.models import Course, Subject, Timetable, AuditLog
+from accounts.models import User
+from attendance.models import AttendanceRecord
+from django.utils import timezone
 
 User = get_user_model()
 
@@ -246,9 +250,21 @@ def check_enrollment(request, admission_id):
 
 @login_required
 def admin_dashboard(request):
-    if request.user.role != "admin":
-        return redirect("login")
-    return render(request, "admin/dashboard.html")
+    today = timezone.localdate()
+
+    total_students = User.objects.filter(role="student").count()
+    total_lecturers = User.objects.filter(role="lecturer").count()
+    total_courses = Course.objects.count()
+    today_attendance = AttendanceRecord.objects.filter(
+        attendance_date=today
+    ).count()
+
+    return render(request, "admin/dashboard.html", {
+        "total_students": total_students,
+        "total_lecturers": total_lecturers,
+        "total_courses": total_courses,
+        "today_attendance": today_attendance,
+    })
 
 
 @login_required
@@ -272,27 +288,78 @@ def admin_profile(request):
 
 @login_required
 def admin_courses(request):
-    return render(request, "admin/courses.html")
+    if request.user.role != "admin":
+        return redirect("login")
+
+    courses = Course.objects.all()
+
+    return render(request, "admin/courses.html", {
+        "courses": courses
+    })
 
 @login_required
 def admin_subjects(request):
-    return render(request, "admin/subjects.html")
+    if request.user.role != "admin":
+        return redirect("login")
+
+    subjects = Subject.objects.select_related("course")
+
+    return render(request, "admin/subjects.html", {
+        "subjects": subjects
+    })
 
 @login_required
 def admin_lecturers(request):
-    return render(request, "admin/lecturers.html")
+    if request.user.role != "admin":
+        return redirect("login")
+
+    lecturers = User.objects.filter(role="lecturer")
+
+    return render(request, "admin/lecturers.html", {
+        "lecturers": lecturers
+    })
 
 @login_required
 def admin_timetable(request):
-    return render(request, "admin/timetable.html")
+    if request.user.role != "admin":
+        return redirect("login")
+
+    timetables = Timetable.objects.select_related(
+        "course",
+        "subject",
+        "lecturer"
+    )
+
+    return render(request, "admin/timetable.html", {
+        "timetables": timetables
+    })
 
 @login_required
 def admin_audit_logs(request):
-    return render(request, "admin/audit_logs.html")
+    if request.user.role != "admin":
+        return redirect("login")
+
+    logs = AuditLog.objects.all().order_by("-timestamp")
+
+    return render(request, "admin/audit_logs.html", {
+        "logs": logs
+    })
 
 @login_required
 def admin_attendance_data(request):
-    return render(request, "admin/attendance_data.html")
+    if request.user.role != "admin":
+        return redirect("login")
+
+    attendance = AttendanceRecord.objects.select_related(
+        "student",
+        "subject",
+        "lecturer",
+        "course"
+    ).order_by("-attendance_date")
+
+    return render(request, "admin/attendance_data.html", {
+        "attendance": attendance
+    })
 
 
 #  STUDENT 

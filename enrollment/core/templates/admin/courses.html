@@ -5,70 +5,114 @@
 
 {% block content %}
 
-<div class="space-y-10">
+<div class="space-y-12">
 
-    <!-- Gradient Header -->
-    <div class="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 p-8 rounded-3xl shadow-2xl relative overflow-hidden">
-        <div class="absolute inset-0 bg-white/10 backdrop-blur-xl rounded-3xl"></div>
+    <!-- ================= HEADER ================= -->
+    <div class="glass p-10 rounded-3xl shadow-2xl flex flex-col md:flex-row md:items-center md:justify-between gap-6">
 
-        <div class="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-            <div>
-                <h2 class="text-4xl font-extrabold tracking-wide">Courses Management</h2>
-                <p class="text-white/80 mt-2">Manage all academic programs in your institution.</p>
-            </div>
-
-            <button id="openModal"
-                class="px-6 py-3 bg-white text-indigo-700 font-semibold rounded-2xl shadow-xl hover:scale-105 transition duration-300">
-                + Add Course
-            </button>
-        </div>
-    </div>
-
-    <!-- Stats Cards -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-
-        <div class="bg-white/10 backdrop-blur-xl p-6 rounded-3xl shadow-xl hover:scale-105 transition">
-            <h4 class="text-lg font-semibold text-white/80">Total Courses</h4>
-            <p id="totalCourses" class="text-3xl font-bold mt-2">0</p>
+        <div>
+            <h2 class="text-3xl font-bold tracking-tight">
+                Courses Management
+            </h2>
+            <p class="text-white/60 mt-2">
+                Manage all academic programs in your institution.
+            </p>
         </div>
 
-        <div class="bg-white/10 backdrop-blur-xl p-6 rounded-3xl shadow-xl hover:scale-105 transition">
-            <h4 class="text-lg font-semibold text-white/80">Total Semesters</h4>
-            <p id="totalSemesters" class="text-3xl font-bold mt-2">0</p>
-        </div>
-
-        <div class="bg-white/10 backdrop-blur-xl p-6 rounded-3xl shadow-xl hover:scale-105 transition">
-            <h4 class="text-lg font-semibold text-white/80">Avg Duration</h4>
-            <p id="avgDuration" class="text-3xl font-bold mt-2">0 yrs</p>
-        </div>
+        <button id="openModal"
+            class="px-6 py-3 bg-white text-indigo-700 font-semibold rounded-2xl shadow-lg hover:scale-105 transition">
+            + Add Course
+        </button>
 
     </div>
 
-    <!-- Search + Table Card -->
-    <div class="bg-white/10 backdrop-blur-2xl rounded-3xl shadow-2xl p-8">
 
-        <!-- Search -->
-        <div class="mb-6">
-            <input 
-                type="text" 
-                id="searchInput"
-                placeholder="🔍 Search courses..."
-                class="w-full md:w-80 px-5 py-3 rounded-2xl bg-white/20 border border-white/20 focus:outline-none focus:ring-2 focus:ring-indigo-400 placeholder-white/70 transition"
-            >
+    <!-- ================= STATS ================= -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+
+        <div class="glass p-6 rounded-2xl hover:shadow-xl transition">
+            <p class="text-white/60 text-sm mb-2">Total Courses</p>
+            <p class="text-3xl font-bold">
+                {{ courses|length }}
+            </p>
         </div>
 
-        <!-- Table -->
+        <div class="glass p-6 rounded-2xl hover:shadow-xl transition">
+            <p class="text-white/60 text-sm mb-2">Total Semesters</p>
+            <p class="text-3xl font-bold">
+                {{ total_semesters }}
+            </p>
+        </div>
+
+        <div class="glass p-6 rounded-2xl hover:shadow-xl transition">
+            <p class="text-white/60 text-sm mb-2">Average Duration</p>
+            <p class="text-3xl font-bold">
+                {{ avg_duration }} yrs
+            </p>
+        </div>
+
+    </div>
+
+
+    <!-- ================= TABLE ================= -->
+    <div class="glass rounded-3xl p-8 shadow-2xl">
+
         <div class="overflow-x-auto">
             <table class="min-w-full text-left">
+
                 <thead>
-                    <tr class="text-white/70 border-b border-white/20 text-sm uppercase tracking-wider">
+                    <tr class="text-white/60 text-xs uppercase tracking-wider border-b border-white/10">
                         <th class="py-4 px-6">Course Name</th>
                         <th class="py-4 px-6">Duration</th>
                         <th class="py-4 px-6">Semesters</th>
                         <th class="py-4 px-6 text-center">Actions</th>
                     </tr>
                 </thead>
-                <tbody id="coursesTable" class="divide-y divide-white/10 text-lg"></tbody>
+
+                <tbody class="divide-y divide-white/10">
+
+                    {% for course in courses %}
+                    <tr class="hover:bg-white/5 transition">
+
+                        <td class="py-4 px-6 font-semibold">
+                            {{ course.name }}
+                        </td>
+
+                        <td class="py-4 px-6">
+                            {{ course.duration }} yrs
+                        </td>
+
+                        <td class="py-4 px-6">
+                            {{ course.semesters }}
+                        </td>
+
+                        <td class="py-4 px-6 text-center space-x-2">
+
+                            <a href="{% url 'admin_edit_course' course.id %}"
+                               class="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-xl transition text-sm">
+                                Edit
+                            </a>
+
+                            <a href="{% url 'admin_delete_course' course.id %}"
+                               onclick="return confirm('Delete this course?')"
+                               class="px-4 py-2 bg-red-500/80 hover:bg-red-600 rounded-xl transition text-sm">
+                                Delete
+                            </a>
+
+                        </td>
+
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4"
+                            class="text-center py-12 text-white/40 text-lg">
+                            No courses found.
+                        </td>
+                    </tr>
+                    {% endfor %}
+
+                </tbody>
+
             </table>
         </div>
 
@@ -77,33 +121,37 @@
 </div>
 
 
-<!-- Modal -->
-<div id="modalOverlay" class="fixed inset-0 bg-black/60 hidden items-center justify-center z-50 backdrop-blur-md">
+<!-- ================= MODAL ================= -->
+<div id="modalOverlay"
+     class="fixed inset-0 bg-black/60 hidden items-center justify-center z-50 backdrop-blur-md">
 
     <div id="modalBox"
-        class="bg-gradient-to-br from-indigo-600 via-purple-600 to-indigo-700 rounded-3xl shadow-2xl w-full max-w-md p-8 transform scale-95 opacity-0 transition-all duration-300">
+         class="glass rounded-3xl shadow-2xl w-full max-w-md p-8 transform scale-95 opacity-0 transition-all duration-300">
 
-        <h3 class="text-2xl font-bold mb-6">Add New Course</h3>
+        <h3 class="text-2xl font-bold mb-6">
+            Add New Course
+        </h3>
 
-        <form id="courseForm" class="space-y-5">
+        <form method="POST" action="{% url 'admin_add_course' %}" class="space-y-5">
 
             {% csrf_token %}
 
-            <input type="text" id="courseName" required
+            <input type="text" name="name" required
                 placeholder="Course Name"
-                class="w-full px-5 py-3 rounded-2xl bg-white/20 border border-white/30 focus:outline-none focus:ring-2 focus:ring-white">
+                class="w-full px-5 py-3 rounded-2xl glass-soft focus:ring-2 focus:ring-indigo-500">
 
-            <input type="number" id="courseDuration" required min="1"
+            <input type="number" name="duration" required min="1"
                 placeholder="Duration (Years)"
-                class="w-full px-5 py-3 rounded-2xl bg-white/20 border border-white/30 focus:outline-none focus:ring-2 focus:ring-white">
+                class="w-full px-5 py-3 rounded-2xl glass-soft focus:ring-2 focus:ring-indigo-500">
 
-            <input type="number" id="courseSemesters" required min="1"
+            <input type="number" name="semesters" required min="1"
                 placeholder="Total Semesters"
-                class="w-full px-5 py-3 rounded-2xl bg-white/20 border border-white/30 focus:outline-none focus:ring-2 focus:ring-white">
+                class="w-full px-5 py-3 rounded-2xl glass-soft focus:ring-2 focus:ring-indigo-500">
 
             <div class="flex justify-end gap-4 pt-4">
+
                 <button type="button" id="closeModal"
-                    class="px-5 py-2 rounded-2xl bg-white/30 hover:bg-white/40 transition">
+                    class="px-5 py-2 rounded-2xl bg-white/20 hover:bg-white/30 transition">
                     Cancel
                 </button>
 
@@ -111,129 +159,43 @@
                     class="px-5 py-2 rounded-2xl bg-white text-indigo-700 font-semibold hover:scale-105 transition">
                     Save
                 </button>
+
             </div>
 
         </form>
+
     </div>
 </div>
 
 
 <script>
-
-let courses = [
-    { id: 1, name: "Computer Science", duration: 4, semesters: 8 },
-    { id: 2, name: "Business Administration", duration: 3, semesters: 6 },
-    { id: 3, name: "Mechanical Engineering", duration: 4, semesters: 8 },
-    { id: 4, name: "Psychology", duration: 3, semesters: 6 }
-];
-
-const tableBody = document.getElementById("coursesTable");
-const searchInput = document.getElementById("searchInput");
 const modalOverlay = document.getElementById("modalOverlay");
 const modalBox = document.getElementById("modalBox");
 const openModalBtn = document.getElementById("openModal");
 const closeModalBtn = document.getElementById("closeModal");
-const courseForm = document.getElementById("courseForm");
 
-function updateStats() {
-    document.getElementById("totalCourses").innerText = courses.length;
-    const totalSem = courses.reduce((sum, c) => sum + c.semesters, 0);
-    document.getElementById("totalSemesters").innerText = totalSem;
-    const avgDur = (courses.reduce((sum, c) => sum + c.duration, 0) / courses.length).toFixed(1);
-    document.getElementById("avgDuration").innerText = avgDur + " yrs";
-}
-
-function renderTable(filteredCourses = courses) {
-    tableBody.innerHTML = "";
-
-    if (filteredCourses.length === 0) {
-        tableBody.innerHTML = `
-            <tr>
-                <td colspan="4" class="text-center py-10 text-white/60 text-xl">
-                    No courses found.
-                </td>
-            </tr>
-        `;
-        return;
-    }
-
-    filteredCourses.forEach(course => {
-        const row = document.createElement("tr");
-        row.className = "hover:bg-white/10 transition duration-300";
-
-        row.innerHTML = `
-            <td class="py-4 px-6 font-semibold">${course.name}</td>
-            <td class="py-4 px-6">${course.duration} yrs</td>
-            <td class="py-4 px-6">${course.semesters}</td>
-            <td class="py-4 px-6 text-center">
-                <button onclick="deleteCourse(${course.id})"
-                    class="px-4 py-2 bg-red-500 hover:bg-red-600 rounded-2xl transition text-sm shadow-lg">
-                    Delete
-                </button>
-            </td>
-        `;
-        tableBody.appendChild(row);
-    });
-
-    updateStats();
-}
-
-searchInput.addEventListener("input", function () {
-    const value = this.value.toLowerCase();
-    const filtered = courses.filter(course =>
-        course.name.toLowerCase().includes(value)
-    );
-    renderTable(filtered);
-});
-
-function openModal() {
+function openModal(){
     modalOverlay.classList.remove("hidden");
     modalOverlay.classList.add("flex");
-    setTimeout(() => {
-        modalBox.classList.remove("scale-95", "opacity-0");
-        modalBox.classList.add("scale-100", "opacity-100");
-    }, 10);
+    setTimeout(()=>{
+        modalBox.classList.remove("scale-95","opacity-0");
+        modalBox.classList.add("scale-100","opacity-100");
+    },10);
 }
 
-function closeModal() {
-    modalBox.classList.add("scale-95", "opacity-0");
-    setTimeout(() => {
+function closeModal(){
+    modalBox.classList.add("scale-95","opacity-0");
+    setTimeout(()=>{
         modalOverlay.classList.add("hidden");
         modalOverlay.classList.remove("flex");
-        courseForm.reset();
-    }, 200);
+    },200);
 }
 
-openModalBtn.addEventListener("click", openModal);
-closeModalBtn.addEventListener("click", closeModal);
-
-courseForm.addEventListener("submit", function (e) {
-    e.preventDefault();
-
-    const name = document.getElementById("courseName").value.trim();
-    const duration = parseInt(document.getElementById("courseDuration").value);
-    const semesters = parseInt(document.getElementById("courseSemesters").value);
-
-    courses.push({
-        id: Date.now(),
-        name,
-        duration,
-        semesters
-    });
-
-    renderTable();
-    closeModal();
+openModalBtn.addEventListener("click",openModal);
+closeModalBtn.addEventListener("click",closeModal);
+modalOverlay.addEventListener("click",(e)=>{
+    if(e.target===modalOverlay) closeModal();
 });
-
-function deleteCourse(id) {
-    if (confirm("Delete this course?")) {
-        courses = courses.filter(course => course.id !== id);
-        renderTable();
-    }
-}
-
-renderTable();
-
 </script>
 
 {% endblock %}

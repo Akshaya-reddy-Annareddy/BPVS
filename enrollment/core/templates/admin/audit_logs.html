@@ -2,81 +2,115 @@
 {% load static %}
 
 {% block content %}
-<main class="flex-1 overflow-y-auto p-6 md:p-10 text-white bg-slate-950">
+<main class="flex-1 overflow-y-auto px-6 md:px-10 py-8 text-white bg-slate-950">
 
-    <!-- ================= HEADER ================= -->
-    <div class="rounded-3xl p-8 mb-10 bg-gradient-to-r from-indigo-700 via-purple-700 to-indigo-800 shadow-2xl">
-        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-            <div>
-                <div class="flex items-center gap-3 mb-2">
-                    <span class="w-3 h-3 bg-green-400 rounded-full animate-pulse"></span>
-                    <h2 class="text-4xl font-bold">Audit Logs & Security Monitor</h2>
-                </div>
-                <p class="text-white/80 text-lg">
-                    Track system activities, attendance actions, and security events.
-                </p>
+<style>
+/* ===== Glass System ===== */
+.glass{
+    background:rgba(255,255,255,0.05);
+    backdrop-filter:blur(18px);
+    border:1px solid rgba(255,255,255,0.08);
+    box-shadow:0 10px 40px rgba(0,0,0,0.4);
+}
+.glass-soft{
+    background:rgba(255,255,255,0.03);
+    backdrop-filter:blur(10px);
+    border:1px solid rgba(255,255,255,0.05);
+}
+.hover-lift{
+    transition:all .25s cubic-bezier(.4,0,.2,1);
+}
+.hover-lift:hover{
+    transform:translateY(-4px);
+    box-shadow:0 18px 50px rgba(0,0,0,0.5);
+}
+.gradient-border{
+    background:linear-gradient(135deg,rgba(99,102,241,.3),rgba(168,85,247,.3));
+    padding:1px;
+    border-radius:1.5rem;
+}
+.gradient-border > div{
+    border-radius:1.5rem;
+}
+input,select{
+    outline:none;
+}
+input:focus,select:focus{
+    border-color:#6366f1;
+    box-shadow:0 0 0 2px rgba(99,102,241,.4);
+}
+</style>
+
+<!-- ================= HERO HEADER ================= -->
+<div class="relative rounded-3xl p-10 mb-12 bg-gradient-to-br from-indigo-700 via-purple-700 to-indigo-900 shadow-2xl overflow-hidden">
+
+    <div class="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_top_right,white,transparent_60%)]"></div>
+
+    <div class="relative flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+        <div>
+            <div class="flex items-center gap-3 mb-3">
+                <span class="w-3 h-3 bg-green-400 rounded-full animate-pulse"></span>
+                <h2 class="text-4xl font-bold tracking-tight">
+                    Security & Audit Intelligence
+                </h2>
             </div>
+            <p class="text-white/80 text-lg max-w-2xl">
+                Real-time monitoring of biometric events, attendance actions and administrative activities.
+            </p>
+        </div>
 
-            <div class="flex flex-wrap gap-3">
-                <a href="{% url 'export_audit_logs' %}"
-                   class="bg-white text-indigo-700 font-semibold px-5 py-3 rounded-2xl shadow hover:scale-105 transition">
-                    Export Logs
-                </a>
+        <div class="flex flex-wrap gap-3">
+            <a href="{% url 'export_audit_logs' %}"
+               class="bg-white text-indigo-700 font-semibold px-6 py-3 rounded-2xl shadow-xl hover:scale-105 transition-all duration-300">
+                Export Logs
+            </a>
 
-                <button id="clearFilters"
-                        class="bg-white/20 hover:bg-white/30 px-5 py-3 rounded-2xl transition">
-                    Clear Filters
-                </button>
-            </div>
+            <button id="clearFilters"
+                    class="bg-white/10 hover:bg-white/20 px-6 py-3 rounded-2xl transition">
+                Clear Filters
+            </button>
         </div>
     </div>
+</div>
 
-    <!-- ================= SUMMARY CARDS ================= -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6 gap-6 mb-10">
+<!-- ================= SUMMARY CARDS ================= -->
+<div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6 gap-8 mb-12">
 
-        <div class="glass-card">
-            <p class="text-white/60 text-sm mb-2">Total Logs Today</p>
-            <p class="text-3xl font-bold">{{ stats.today_count }}</p>
+    {% for label,value,color in [
+        ("Total Logs Today", stats.today_count, "text-white"),
+        ("This Month", stats.month_count, "text-white"),
+        ("Critical Events", stats.critical_count, "text-red-400"),
+        ("Failed Liveness", stats.liveness_failed, "text-yellow-400"),
+        ("Spoof Attempts", stats.spoof_count, "text-orange-400"),
+        ("Manual Edits", stats.manual_edits, "text-blue-400"),
+    ] %}
+    <div class="gradient-border hover-lift">
+        <div class="glass p-6">
+            <p class="text-white/60 text-sm uppercase tracking-wide mb-2">
+                {{ label }}
+            </p>
+            <p class="text-3xl font-bold {{ color }}">
+                {{ value }}
+            </p>
         </div>
-
-        <div class="glass-card">
-            <p class="text-white/60 text-sm mb-2">This Month</p>
-            <p class="text-3xl font-bold">{{ stats.month_count }}</p>
-        </div>
-
-        <div class="glass-card">
-            <p class="text-white/60 text-sm mb-2">Critical Events</p>
-            <p class="text-3xl font-bold text-red-400">{{ stats.critical_count }}</p>
-        </div>
-
-        <div class="glass-card">
-            <p class="text-white/60 text-sm mb-2">Failed Liveness</p>
-            <p class="text-3xl font-bold text-yellow-400">{{ stats.liveness_failed }}</p>
-        </div>
-
-        <div class="glass-card">
-            <p class="text-white/60 text-sm mb-2">Spoof Attempts</p>
-            <p class="text-3xl font-bold text-orange-400">{{ stats.spoof_count }}</p>
-        </div>
-
-        <div class="glass-card">
-            <p class="text-white/60 text-sm mb-2">Manual Edits</p>
-            <p class="text-3xl font-bold text-blue-400">{{ stats.manual_edits }}</p>
-        </div>
-
     </div>
+    {% endfor %}
 
-    <!-- ================= FILTERS ================= -->
-    <form method="get" class="glass-card mb-8 p-6">
-        <div class="grid md:grid-cols-6 gap-4">
+</div>
+
+<!-- ================= FILTERS ================= -->
+<form method="get" class="gradient-border mb-10">
+    <div class="glass p-8">
+
+        <div class="grid md:grid-cols-6 gap-6">
 
             <input type="date" name="from" value="{{ request.GET.from }}"
-                   class="px-4 py-2 rounded-xl bg-white/5 border border-white/10">
+                   class="px-4 py-3 rounded-xl glass-soft border border-white/10">
 
             <input type="date" name="to" value="{{ request.GET.to }}"
-                   class="px-4 py-2 rounded-xl bg-white/5 border border-white/10">
+                   class="px-4 py-3 rounded-xl glass-soft border border-white/10">
 
-            <select name="event" class="px-4 py-2 rounded-xl bg-white/5 border border-white/10">
+            <select name="event" class="px-4 py-3 rounded-xl glass-soft border border-white/10">
                 <option value="">All Events</option>
                 {% for e in event_types %}
                     <option value="{{ e }}" {% if request.GET.event == e %}selected{% endif %}>
@@ -85,7 +119,7 @@
                 {% endfor %}
             </select>
 
-            <select name="severity" class="px-4 py-2 rounded-xl bg-white/5 border border-white/10">
+            <select name="severity" class="px-4 py-3 rounded-xl glass-soft border border-white/10">
                 <option value="">All Severity</option>
                 {% for s in severities %}
                     <option value="{{ s }}" {% if request.GET.severity == s %}selected{% endif %}>
@@ -94,7 +128,7 @@
                 {% endfor %}
             </select>
 
-            <select name="role" class="px-4 py-2 rounded-xl bg-white/5 border border-white/10">
+            <select name="role" class="px-4 py-3 rounded-xl glass-soft border border-white/10">
                 <option value="">All Roles</option>
                 {% for r in roles %}
                     <option value="{{ r }}" {% if request.GET.role == r %}selected{% endif %}>
@@ -106,92 +140,107 @@
             <input type="text" name="search"
                    value="{{ request.GET.search }}"
                    placeholder="Search ID, name, IP..."
-                   class="px-4 py-2 rounded-xl bg-white/5 border border-white/10">
+                   class="px-4 py-3 rounded-xl glass-soft border border-white/10">
 
         </div>
 
-        <div class="mt-4">
+        <div class="mt-6">
             <button type="submit"
-                    class="px-6 py-2 bg-indigo-600 rounded-xl hover:bg-indigo-700 transition">
+                    class="px-6 py-3 bg-indigo-600 rounded-xl hover:bg-indigo-700 transition shadow-lg">
                 Apply Filters
             </button>
         </div>
-    </form>
 
-    <!-- ================= TABLE ================= -->
-    <div class="glass-card overflow-auto">
+    </div>
+</form>
+
+<!-- ================= TABLE ================= -->
+<div class="gradient-border">
+    <div class="glass overflow-auto">
+
         <table class="min-w-full text-left text-sm">
-            <thead class="sticky top-0 bg-slate-900/80 backdrop-blur-md">
-                <tr class="text-white/70 uppercase text-xs">
-                    <th class="py-3 px-4">Event ID</th>
-                    <th class="py-3 px-4">Type</th>
-                    <th class="py-3 px-4">Actor</th>
-                    <th class="py-3 px-4">Role</th>
-                    <th class="py-3 px-4">Target</th>
-                    <th class="py-3 px-4">IP</th>
-                    <th class="py-3 px-4">Severity</th>
-                    <th class="py-3 px-4">Timestamp</th>
-                    <th class="py-3 px-4 text-center">Actions</th>
+            <thead class="sticky top-0 bg-slate-900/90 backdrop-blur-md">
+                <tr class="text-white/70 uppercase text-xs tracking-wide">
+                    <th class="py-4 px-6">Event ID</th>
+                    <th class="py-4 px-6">Type</th>
+                    <th class="py-4 px-6">Actor</th>
+                    <th class="py-4 px-6">Role</th>
+                    <th class="py-4 px-6">Target</th>
+                    <th class="py-4 px-6">IP</th>
+                    <th class="py-4 px-6">Severity</th>
+                    <th class="py-4 px-6">Timestamp</th>
+                    <th class="py-4 px-6 text-center">Actions</th>
                 </tr>
             </thead>
 
             <tbody class="divide-y divide-white/10">
                 {% for log in page_obj %}
-                <tr class="hover:bg-white/5 transition">
-                    <td class="py-3 px-4">{{ log.event_id }}</td>
-                    <td class="py-3 px-4">{{ log.event_type }}</td>
-                    <td class="py-3 px-4">{{ log.actor_name }}</td>
-                    <td class="py-3 px-4">{{ log.actor_role }}</td>
-                    <td class="py-3 px-4">{{ log.target_entity }}</td>
-                    <td class="py-3 px-4">{{ log.ip_address }}</td>
-                    <td class="py-3 px-4">
-                        <span class="px-3 py-1 rounded-full text-xs
-                            {% if log.severity == 'Low' %}bg-blue-500
-                            {% elif log.severity == 'Medium' %}bg-yellow-400 text-black
-                            {% elif log.severity == 'High' %}bg-orange-500
-                            {% else %}bg-red-600{% endif %}">
+                <tr class="hover:bg-white/5 transition duration-200">
+                    <td class="py-4 px-6 font-mono text-white/80">
+                        {{ log.event_id }}
+                    </td>
+                    <td class="py-4 px-6">{{ log.event_type }}</td>
+                    <td class="py-4 px-6">{{ log.actor_name }}</td>
+                    <td class="py-4 px-6">{{ log.actor_role }}</td>
+                    <td class="py-4 px-6">{{ log.target_entity }}</td>
+                    <td class="py-4 px-6 text-white/60">{{ log.ip_address }}</td>
+                    <td class="py-4 px-6">
+                        <span class="px-3 py-1 rounded-full text-xs font-semibold
+                            {% if log.severity == 'Low' %}bg-blue-500/20 text-blue-400
+                            {% elif log.severity == 'Medium' %}bg-yellow-400/20 text-yellow-300
+                            {% elif log.severity == 'High' %}bg-orange-500/20 text-orange-400
+                            {% else %}bg-red-600/20 text-red-400{% endif %}">
                             {{ log.severity }}
                         </span>
                     </td>
-                    <td class="py-3 px-4">
+                    <td class="py-4 px-6 text-white/70">
                         {{ log.timestamp|date:"Y-m-d H:i:s" }}
                     </td>
-                    <td class="py-3 px-4 text-center">
+                    <td class="py-4 px-6 text-center">
                         <a href="{% url 'audit_log_detail' log.id %}"
-                           class="px-3 py-1 bg-white/20 rounded-xl hover:bg-white/30">
+                           class="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-xl transition">
                             View
                         </a>
                     </td>
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="9" class="text-center py-6 text-white/50">
+                    <td colspan="9"
+                        class="text-center py-12 text-white/40 text-lg">
                         No audit logs found.
                     </td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
+
+    </div>
+</div>
+
+<!-- ================= PAGINATION ================= -->
+<div class="flex justify-between items-center mt-8">
+
+    <div class="text-white/60 text-sm">
+        Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
     </div>
 
-    <!-- ================= PAGINATION ================= -->
-    <div class="flex justify-between items-center mt-6">
-        <div class="text-white/60 text-sm">
-            Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
-        </div>
+    <div class="flex gap-4">
+        {% if page_obj.has_previous %}
+            <a href="?page={{ page_obj.previous_page_number }}"
+               class="px-5 py-2 bg-white/10 hover:bg-white/20 rounded-xl transition">
+                Prev
+            </a>
+        {% endif %}
 
-        <div class="flex gap-3">
-            {% if page_obj.has_previous %}
-                <a href="?page={{ page_obj.previous_page_number }}"
-                   class="px-4 py-2 bg-white/20 rounded-xl">Prev</a>
-            {% endif %}
-
-            {% if page_obj.has_next %}
-                <a href="?page={{ page_obj.next_page_number }}"
-                   class="px-4 py-2 bg-white/20 rounded-xl">Next</a>
-            {% endif %}
-        </div>
+        {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}"
+               class="px-5 py-2 bg-white/10 hover:bg-white/20 rounded-xl transition">
+                Next
+            </a>
+        {% endif %}
     </div>
+
+</div>
 
 </main>
 {% endblock %}
