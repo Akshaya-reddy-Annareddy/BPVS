@@ -53,9 +53,9 @@ urlpatterns = [
     path("logout/", LogoutView.as_view(next_page="login"), name="logout"),
 
     #  DASHBOARDS 
-    path("admin-dashboard/", admin_dashboard, name="admin_dashboard"),
-    path("student-dashboard/", student_dashboard, name="student_dashboard"),
-    path("lecturer-dashboard/", lecturer_dashboard, name="lecturer_dashboard"),
+    path("admin/dashboard/", admin_dashboard, name="admin_dashboard"),
+    path("student/dashboard/", student_dashboard, name="student_dashboard"),
+    path("lecturer/dashboard/", lecturer_dashboard, name="lecturer_dashboard"),
 
     # ADMIN
     path("admin/profile/", admin_profile, name="admin_profile"),

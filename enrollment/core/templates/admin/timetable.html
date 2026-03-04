@@ -1,11 +1,68 @@
-{% extends "base.html" %}
-
-{% block page_title %}Timetable{% endblock %}
-
+{% extends "admin/base.html" %}
 {% block content %}
-<div class="bg-white rounded-2xl shadow-xl p-6">
-    <h2 class="text-2xl font-bold text-indigo-600">
-        Timetable
-    </h2>
-</div>
+
+<main class="flex-1 overflow-y-auto p-6 md:p-10 text-white bg-slate-950">
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="mb-4 p-4 rounded-xl bg-indigo-600">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <!-- HEADER -->
+    <div class="rounded-3xl p-8 mb-10 bg-gradient-to-r from-indigo-700 via-purple-700 to-indigo-800 shadow-2xl">
+        <h2 class="text-3xl font-bold">
+            Timetable Management & Academic Scheduling Engine
+        </h2>
+    </div>
+
+    <!-- CSV Upload -->
+    <div class="glass rounded-3xl p-10 mb-10">
+        <form method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+            <input type="file" name="csv_file" required
+                   class="mb-4 text-white">
+            <button type="submit"
+                    class="bg-indigo-600 px-6 py-3 rounded-xl">
+                Upload Timetable
+            </button>
+        </form>
+    </div>
+
+    <!-- Timetable Table -->
+    <div class="glass rounded-3xl p-6">
+        <table class="min-w-full text-sm">
+            <thead>
+                <tr>
+                    <th>Course</th>
+                    <th>Subject</th>
+                    <th>Lecturer</th>
+                    <th>Day</th>
+                    <th>Time</th>
+                    <th>Room</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for t in timetables %}
+                <tr>
+                    <td>{{ t.course.course_name }}</td>
+                    <td>{{ t.subject.subject_name }}</td>
+                    <td>{{ t.lecturer.user.get_full_name }}</td>
+                    <td>{{ t.day }}</td>
+                    <td>{{ t.start_time }} - {{ t.end_time }}</td>
+                    <td>{{ t.room_number }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6">No timetable uploaded.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+</main>
+
 {% endblock %}

@@ -1,11 +1,281 @@
-{% extends "base.html" %}
+{% extends "admin/base.html" %}
 
-{% block page_title %}Lecturers{% endblock %}
+{% block page_title %}Lecturers Management{% endblock %}
+{% block header_title %}Lecturers Management{% endblock %}
 
 {% block content %}
-<div class="bg-white rounded-2xl shadow-xl p-6">
-    <h2 class="text-2xl font-bold text-indigo-600">
-        Lecturers
-    </h2>
+
+<main class="flex-1 overflow-y-auto p-6 md:p-10 text-white">
+
+<style>
+.glass {
+    background: rgba(255,255,255,0.08);
+    backdrop-filter: blur(18px);
+    border: 1px solid rgba(255,255,255,0.15);
+}
+.hover-lift { transition: all 0.25s ease; }
+.hover-lift:hover { transform: translateY(-6px) scale(1.02); }
+.badge {
+    padding: 4px 10px;
+    border-radius: 9999px;
+    font-size: 12px;
+    font-weight: 500;
+}
+.table-row:hover { background: rgba(255,255,255,0.07); }
+.modal-hidden { opacity:0; transform:scale(0.9); }
+.modal-show { opacity:1; transform:scale(1); }
+</style>
+
+<!-- HEADER -->
+<div class="rounded-3xl p-8 mb-10 bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-700 shadow-2xl">
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+        <div>
+            <h2 class="text-4xl font-bold mb-2">Lecturers Management</h2>
+            <p class="text-white/80 text-lg">Manage teaching assignments and course allocations.</p>
+        </div>
+        <button id="openModal"
+            class="bg-white text-indigo-700 font-semibold px-6 py-3 rounded-2xl shadow-xl hover:scale-105 transition">
+            + Add Lecturer
+        </button>
+    </div>
 </div>
+
+<!-- STATS -->
+<div id="statsSection" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 mb-10"></div>
+
+<!-- SEARCH + FILTER -->
+<div class="flex flex-col md:flex-row md:items-center gap-4 mb-8">
+    <input id="searchInput" type="text" placeholder="Search by name or ID..."
+        class="flex-1 px-5 py-3 rounded-2xl glass focus:outline-none focus:ring-2 focus:ring-indigo-400 placeholder-white/60">
+    <select id="statusFilter"
+        class="px-5 py-3 rounded-2xl glass focus:outline-none focus:ring-2 focus:ring-indigo-400">
+        <option value="All">All Status</option>
+        <option value="Active">Active</option>
+        <option value="Inactive">Inactive</option>
+    </select>
+</div>
+
+<!-- HYBRID -->
+<div class="grid grid-cols-1 xl:grid-cols-2 gap-8">
+
+    <!-- CARDS -->
+    <div id="lecturerCards" class="grid sm:grid-cols-2 gap-6"></div>
+
+    <!-- TABLE -->
+    <div class="glass rounded-3xl shadow-2xl p-6 overflow-auto">
+        <table class="min-w-full text-left">
+            <thead class="sticky top-0 bg-white/10 backdrop-blur-md">
+                <tr class="text-white/80 uppercase text-sm">
+                    <th class="py-3 px-4">ID</th>
+                    <th class="py-3 px-4">Name</th>
+                    <th class="py-3 px-4">Subjects</th>
+                    <th class="py-3 px-4">Courses</th>
+                    <th class="py-3 px-4">Status</th>
+                    <th class="py-3 px-4 text-center">Actions</th>
+                </tr>
+            </thead>
+            <tbody id="lecturerTable" class="divide-y divide-white/10"></tbody>
+        </table>
+    </div>
+</div>
+
+<!-- MODAL -->
+<div id="modalOverlay"
+    class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden items-center justify-center z-50">
+    <div id="modalBox"
+        class="glass rounded-3xl shadow-2xl w-full max-w-lg p-8 transition-all duration-300 modal-hidden">
+        <h3 class="text-2xl font-semibold mb-6">Add New Lecturer</h3>
+
+        <form id="lecturerForm" class="space-y-5">
+            {% csrf_token %}
+
+            <input type="text" id="lecturerId" placeholder="Lecturer ID"
+                class="w-full px-4 py-3 rounded-2xl glass focus:outline-none focus:ring-2 focus:ring-indigo-400" required>
+
+            <input type="text" id="lecturerName" placeholder="Lecturer Name"
+                class="w-full px-4 py-3 rounded-2xl glass focus:outline-none focus:ring-2 focus:ring-indigo-400" required>
+
+            <input type="text" id="lecturerSubjects" placeholder="Subjects (comma separated)"
+                class="w-full px-4 py-3 rounded-2xl glass focus:outline-none focus:ring-2 focus:ring-indigo-400" required>
+
+            <input type="text" id="lecturerCourses" placeholder="Courses (comma separated)"
+                class="w-full px-4 py-3 rounded-2xl glass focus:outline-none focus:ring-2 focus:ring-indigo-400" required>
+
+            <select id="lecturerStatus"
+                class="w-full px-4 py-3 rounded-2xl glass focus:outline-none focus:ring-2 focus:ring-indigo-400">
+                <option>Active</option>
+                <option>Inactive</option>
+            </select>
+
+            <div class="flex justify-end gap-4 pt-4">
+                <button type="button" id="closeModal"
+                    class="px-5 py-2 rounded-2xl bg-white/20 hover:bg-white/30 transition">
+                    Cancel
+                </button>
+                <button type="submit"
+                    class="px-5 py-2 rounded-2xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:scale-105 transition">
+                    Save
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+</main>
+
+<script>
+
+let lecturers = [
+{ id:"L001", name:"Dr. John Smith", subjects:["Data Structures","Algorithms"], courses:["Computer Science"], status:"Active" },
+{ id:"L002", name:"Prof. Emily Johnson", subjects:["Marketing","Finance"], courses:["Business Administration"], status:"Active" },
+{ id:"L003", name:"Dr. Michael Brown", subjects:["Thermodynamics"], courses:["Mechanical Engineering"], status:"Inactive" },
+{ id:"L004", name:"Dr. Sarah Wilson", subjects:["AI","Machine Learning","Deep Learning"], courses:["Computer Science","Data Science"], status:"Active" }
+];
+
+const cardsContainer = document.getElementById("lecturerCards");
+const tableBody = document.getElementById("lecturerTable");
+const statsSection = document.getElementById("statsSection");
+const searchInput = document.getElementById("searchInput");
+const statusFilter = document.getElementById("statusFilter");
+const modalOverlay = document.getElementById("modalOverlay");
+const modalBox = document.getElementById("modalBox");
+const openModalBtn = document.getElementById("openModal");
+const closeModalBtn = document.getElementById("closeModal");
+const lecturerForm = document.getElementById("lecturerForm");
+
+function renderStats() {
+    const total = lecturers.length;
+    const active = lecturers.filter(l=>l.status==="Active").length;
+    const totalSubjects = lecturers.reduce((s,l)=>s+l.subjects.length,0);
+    const uniqueCourses = [...new Set(lecturers.flatMap(l=>l.courses))].length;
+
+    const stats = [
+        {label:"Total Lecturers", value:total},
+        {label:"Active Lecturers", value:active},
+        {label:"Total Subjects Assigned", value:totalSubjects},
+        {label:"Total Courses Covered", value:uniqueCourses}
+    ];
+
+    statsSection.innerHTML="";
+    stats.forEach(stat=>{
+        const card=document.createElement("div");
+        card.className="glass rounded-3xl p-6 shadow-xl hover-lift text-center";
+        card.innerHTML=`<h4 class="text-white/70 text-sm mb-2">${stat.label}</h4>
+                        <p class="text-3xl font-bold">${stat.value}</p>`;
+        statsSection.appendChild(card);
+    });
+}
+
+function getFiltered() {
+    const search=searchInput.value.toLowerCase();
+    const status=statusFilter.value;
+    return lecturers.filter(l=>{
+        const matchesSearch=l.name.toLowerCase().includes(search)||l.id.toLowerCase().includes(search);
+        const matchesStatus=status==="All"||l.status===status;
+        return matchesSearch&&matchesStatus;
+    });
+}
+
+function renderCards(data) {
+    cardsContainer.innerHTML="";
+    if(data.length===0){
+        cardsContainer.innerHTML="<p class='text-white/60'>No lecturers found.</p>";
+        return;
+    }
+    data.forEach(l=>{
+        const card=document.createElement("div");
+        card.className="glass rounded-3xl p-6 shadow-xl hover-lift";
+        card.innerHTML=`
+            <h3 class="text-xl font-semibold mb-1">${l.name}</h3>
+            <p class="text-white/60 mb-4">${l.id}</p>
+            <div class="mb-3">${l.subjects.map(s=>`<span class="badge bg-indigo-500/30">${s}</span>`).join(" ")}</div>
+            <div class="mb-4">${l.courses.map(c=>`<span class="badge bg-purple-500/30">${c}</span>`).join(" ")}</div>
+            <span class="badge ${l.status==="Active"?"bg-green-500/30":"bg-red-500/30"}">${l.status}</span>
+        `;
+        cardsContainer.appendChild(card);
+    });
+}
+
+function renderTable(data) {
+    tableBody.innerHTML="";
+    if(data.length===0){
+        tableBody.innerHTML="<tr><td colspan='6' class='py-6 text-center text-white/60'>No lecturers found.</td></tr>";
+        return;
+    }
+    data.forEach(l=>{
+        const row=document.createElement("tr");
+        row.className="table-row";
+        row.innerHTML=`
+            <td class="py-3 px-4">${l.id}</td>
+            <td class="py-3 px-4">${l.name}</td>
+            <td class="py-3 px-4">${l.subjects.join(", ")}</td>
+            <td class="py-3 px-4">${l.courses.join(", ")}</td>
+            <td class="py-3 px-4">${l.status}</td>
+            <td class="py-3 px-4 text-center">
+                <button onclick="deleteLecturer('${l.id}')"
+                    class="px-3 py-1 bg-red-500 hover:bg-red-600 rounded-xl transition">
+                    Delete
+                </button>
+            </td>`;
+        tableBody.appendChild(row);
+    });
+}
+
+function updateUI(){
+    renderStats();
+    const filtered=getFiltered();
+    renderCards(filtered);
+    renderTable(filtered);
+}
+
+function deleteLecturer(id){
+    if(confirm("Delete this lecturer?")){
+        lecturers=lecturers.filter(l=>l.id!==id);
+        updateUI();
+    }
+}
+
+openModalBtn.addEventListener("click",()=>{
+    modalOverlay.classList.remove("hidden");
+    modalOverlay.classList.add("flex");
+    setTimeout(()=>modalBox.classList.add("modal-show"),10);
+});
+
+closeModalBtn.addEventListener("click",closeModal);
+modalOverlay.addEventListener("click",e=>{ if(e.target===modalOverlay) closeModal(); });
+
+function closeModal(){
+    modalBox.classList.remove("modal-show");
+    setTimeout(()=>{
+        modalOverlay.classList.add("hidden");
+        modalOverlay.classList.remove("flex");
+        lecturerForm.reset();
+    },250);
+}
+
+lecturerForm.addEventListener("submit",e=>{
+    e.preventDefault();
+    const newId=document.getElementById("lecturerId").value.trim();
+    if(lecturers.some(l=>l.id===newId)){
+        alert("Lecturer ID already exists.");
+        return;
+    }
+    lecturers.push({
+        id:newId,
+        name:document.getElementById("lecturerName").value.trim(),
+        subjects:document.getElementById("lecturerSubjects").value.split(",").map(s=>s.trim()),
+        courses:document.getElementById("lecturerCourses").value.split(",").map(c=>c.trim()),
+        status:document.getElementById("lecturerStatus").value
+    });
+    closeModal();
+    updateUI();
+});
+
+searchInput.addEventListener("input",updateUI);
+statusFilter.addEventListener("change",updateUI);
+
+updateUI();
+
+</script>
+
 {% endblock %}

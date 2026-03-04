@@ -1,11 +1,317 @@
-{% extends "base.html" %}
+{% extends "admin/base.html" %}
 
-{% block page_title %}Attendance data{% endblock %}
+{% block page_title %}Attendance Analytics{% endblock %}
+{% block header_title %}Attendance Analytics{% endblock %}
 
 {% block content %}
-<div class="bg-white rounded-2xl shadow-xl p-6">
-    <h2 class="text-2xl font-bold text-indigo-600">
-        Attendance data
-    </h2>
+
+<main class="flex-1 overflow-y-auto p-6 md:p-10 text-white">
+
+<style>
+.glass{
+    background:rgba(255,255,255,0.08);
+    backdrop-filter:blur(18px);
+    border:1px solid rgba(255,255,255,0.15);
+}
+.hover-lift{transition:.25s ease;}
+.hover-lift:hover{transform:translateY(-5px) scale(1.02);}
+.table-row:hover{background:rgba(255,255,255,0.07);}
+.card-title{font-size:1.1rem;font-weight:600;}
+canvas{display:block;width:100%;height:350px;}
+</style>
+
+<!-- ================= HEADER ================= -->
+<div class="rounded-3xl p-8 mb-10 bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-700 shadow-2xl">
+    <div class="flex items-center justify-between flex-wrap gap-6">
+        <div>
+            <h2 class="text-4xl font-bold mb-2">Attendance Analytics</h2>
+            <p class="text-white/80 text-lg">Monitor attendance performance across courses and sections.</p>
+        </div>
+
+        <button id="resetView"
+            class="bg-white text-indigo-700 font-semibold px-6 py-3 rounded-2xl shadow-xl hover:scale-105 transition">
+            Reset View
+        </button>
+    </div>
 </div>
+
+<div id="levelContainer"></div>
+
+</main>
+
+<script>
+
+/* ==========================================================
+   BACKEND READY PLACEHOLDER
+   Later replace with:
+   let courses = JSON.parse('{{ attendance_json|escapejs }}');
+========================================================== */
+let courses = [];
+
+/* Dummy fallback (remove after backend integration) */
+if(courses.length === 0){
+    courses = [
+        {
+            name:"B.Tech IT",
+            years:[
+                {
+                    year:"1st Year",
+                    sections:[
+                        {
+                            section:"A",
+                            attendance:Array.from({length:30},(_,i)=>({
+                                date:`2026-03-${String(i+1).padStart(2,'0')}`,
+                                total:60,
+                                present:Math.floor(60*(Math.random()*0.3+0.7))
+                            }))
+                        }
+                    ]
+                }
+            ]
+        }
+    ];
+}
+
+/* ==========================================================
+   STATE
+========================================================== */
+let selectedCourse=null;
+let selectedYear=null;
+let selectedSection=null;
+
+/* ==========================================================
+   LEVEL 1 – COURSES
+========================================================== */
+function renderCourses(){
+    const container=document.getElementById("levelContainer");
+    container.innerHTML=`<div class="grid md:grid-cols-2 xl:grid-cols-3 gap-6"></div>`;
+    const grid=container.firstChild;
+
+    courses.forEach(course=>{
+        const card=document.createElement("div");
+        card.className="glass rounded-3xl p-6 shadow-xl hover-lift cursor-pointer";
+        card.innerHTML=`
+            <div class="card-title mb-3">${course.name}</div>
+            <p class="text-white/70">Years: ${course.years.length}</p>
+        `;
+        card.ondblclick=()=>{
+            selectedCourse=course;
+            renderYears();
+        };
+        grid.appendChild(card);
+    });
+}
+
+/* ==========================================================
+   LEVEL 2 – YEARS
+========================================================== */
+function renderYears(){
+    const container=document.getElementById("levelContainer");
+    container.innerHTML=`
+        <button onclick="renderCourses()" class="mb-6 px-4 py-2 bg-white/20 rounded-xl hover:bg-white/30 transition">← Back</button>
+        <div class="grid md:grid-cols-2 xl:grid-cols-3 gap-6"></div>
+    `;
+    const grid=container.querySelector("div");
+
+    selectedCourse.years.forEach(year=>{
+        const card=document.createElement("div");
+        card.className="glass rounded-3xl p-6 shadow-xl hover-lift cursor-pointer";
+        card.innerHTML=`<div class="card-title">${year.year}</div>`;
+        card.ondblclick=()=>{
+            selectedYear=year;
+            renderSections();
+        };
+        grid.appendChild(card);
+    });
+}
+
+/* ==========================================================
+   LEVEL 3 – SECTIONS
+========================================================== */
+function renderSections(){
+    const container=document.getElementById("levelContainer");
+    container.innerHTML=`
+        <button onclick="renderYears()" class="mb-6 px-4 py-2 bg-white/20 rounded-xl hover:bg-white/30 transition">← Back</button>
+        <div class="grid md:grid-cols-2 xl:grid-cols-4 gap-6"></div>
+    `;
+    const grid=container.querySelector("div");
+
+    selectedYear.sections.forEach(sec=>{
+        const card=document.createElement("div");
+        card.className="glass rounded-3xl p-6 shadow-xl hover-lift cursor-pointer";
+        card.innerHTML=`<div class="card-title">Section ${sec.section}</div>`;
+        card.ondblclick=()=>{
+            selectedSection=sec;
+            renderDashboard();
+        };
+        grid.appendChild(card);
+    });
+}
+
+/* ==========================================================
+   FINAL DASHBOARD
+========================================================== */
+function renderDashboard(){
+    const container=document.getElementById("levelContainer");
+    container.innerHTML=`
+        <button onclick="renderSections()" class="mb-6 px-4 py-2 bg-white/20 rounded-xl hover:bg-white/30 transition">← Back</button>
+
+        <div class="flex flex-wrap gap-4 mb-6">
+            <select id="viewMode" class="px-4 py-2 rounded-xl glass">
+                <option value="line">Line Chart</option>
+                <option value="bar">Bar Chart</option>
+                <option value="pie">Pie Chart</option>
+                <option value="table">Table View</option>
+            </select>
+        </div>
+
+        <div id="summaryCards" class="grid md:grid-cols-4 gap-6 mb-6"></div>
+        <div id="graphContainer" class="glass rounded-3xl p-6 shadow-xl mb-6"></div>
+        <div id="tableContainer" class="glass rounded-3xl p-6 shadow-xl overflow-auto hidden"></div>
+    `;
+
+    renderSummary();
+    renderGraph("line");
+    renderTable();
+
+    document.getElementById("viewMode").onchange=e=>{
+        const mode=e.target.value;
+        renderGraph(mode);
+        document.getElementById("tableContainer")
+            .classList.toggle("hidden",mode!=="table");
+    };
+}
+
+/* ==========================================================
+   SUMMARY CARDS
+========================================================== */
+function renderSummary(){
+    const container=document.getElementById("summaryCards");
+    const data=selectedSection.attendance;
+    const total=data.length;
+    const avg=Math.round(data.reduce((s,d)=>s+(d.present/d.total*100),0)/total);
+
+    const present=data.filter(d=>d.present/d.total>=0.75).length;
+    const absent=total-present;
+
+    container.innerHTML=`
+        ${createStat("Overall Attendance",avg+"%")}
+        ${createStat("Present Days",present)}
+        ${createStat("Absent Days",absent)}
+        ${createStat("Total Days",total)}
+    `;
+}
+
+function createStat(label,value){
+    return `
+    <div class="glass rounded-3xl p-6 text-center hover-lift">
+        <p class="text-white/70 mb-2">${label}</p>
+        <p class="text-2xl font-bold">${value}</p>
+    </div>`;
+}
+
+/* ==========================================================
+   GRAPH ENGINE
+========================================================== */
+function renderGraph(type){
+    const container=document.getElementById("graphContainer");
+    container.innerHTML="<canvas id='chartCanvas'></canvas>";
+    const canvas=document.getElementById("chartCanvas");
+    const ctx=canvas.getContext("2d");
+
+    canvas.width=container.clientWidth;
+    canvas.height=350;
+
+    const data=selectedSection.attendance;
+    const percentages=data.map(d=>Math.round(d.present/d.total*100));
+
+    if(type==="table") return;
+
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+
+    if(type==="line"){
+        ctx.strokeStyle="#8b5cf6";
+        ctx.lineWidth=2;
+        ctx.beginPath();
+        percentages.forEach((p,i)=>{
+            const x=i*(canvas.width/percentages.length);
+            const y=canvas.height-(p/100*canvas.height);
+            i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+        });
+        ctx.stroke();
+    }
+
+    if(type==="bar"){
+        percentages.forEach((p,i)=>{
+            const width=canvas.width/percentages.length;
+            const height=p/100*canvas.height;
+            ctx.fillStyle="#6366f1";
+            ctx.fillRect(i*width,canvas.height-height,width-2,height);
+        });
+    }
+
+    if(type==="pie"){
+        const avg=percentages.reduce((a,b)=>a+b)/percentages.length;
+        const angle=(avg/100)*2*Math.PI;
+
+        ctx.beginPath();
+        ctx.moveTo(canvas.width/2,canvas.height/2);
+        ctx.arc(canvas.width/2,canvas.height/2,120,0,angle);
+        ctx.fillStyle="#6366f1";
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.moveTo(canvas.width/2,canvas.height/2);
+        ctx.arc(canvas.width/2,canvas.height/2,120,angle,2*Math.PI);
+        ctx.fillStyle="#ef4444";
+        ctx.fill();
+    }
+}
+
+/* ==========================================================
+   TABLE
+========================================================== */
+function renderTable(){
+    const container=document.getElementById("tableContainer");
+    const data=selectedSection.attendance;
+
+    container.innerHTML=`
+        <table class="min-w-full text-left">
+            <thead class="sticky top-0 bg-white/10">
+                <tr class="text-white/80 uppercase text-sm">
+                    <th class="py-3 px-4">Date</th>
+                    <th class="py-3 px-4">Total</th>
+                    <th class="py-3 px-4">Present</th>
+                    <th class="py-3 px-4">Absent</th>
+                    <th class="py-3 px-4">Attendance %</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-white/10">
+                ${data.map(d=>`
+                <tr class="table-row">
+                    <td class="py-3 px-4">${d.date}</td>
+                    <td class="py-3 px-4">${d.total}</td>
+                    <td class="py-3 px-4">${d.present}</td>
+                    <td class="py-3 px-4">${d.total-d.present}</td>
+                    <td class="py-3 px-4">${Math.round(d.present/d.total*100)}%</td>
+                </tr>`).join("")}
+            </tbody>
+        </table>
+    `;
+}
+
+/* ==========================================================
+   RESET BUTTON
+========================================================== */
+document.getElementById("resetView").onclick=()=>{
+    selectedCourse=null;
+    selectedYear=null;
+    selectedSection=null;
+    renderCourses();
+};
+
+renderCourses();
+
+</script>
+
 {% endblock %}

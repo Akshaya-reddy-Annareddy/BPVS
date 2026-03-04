@@ -1,139 +1,239 @@
-{% extends "base.html" %}
+{% extends "admin/base.html" %}
 
-{% block page_title %}Courses{% endblock %}
+{% block page_title %}Courses Management{% endblock %}
+{% block header_title %}Courses Management{% endblock %}
 
 {% block content %}
-<div class="bg-white rounded-2xl shadow-xl p-6">
 
-    <div class="flex justify-between items-center mb-6">
-        <h2 class="text-2xl font-bold text-indigo-600">
-            Courses Management
-        </h2>
+<div class="space-y-10">
 
-        <button onclick="openModal()" 
-            class="bg-indigo-600 text-white px-4 py-2 rounded-xl hover:bg-indigo-700">
-            + Add Course
-        </button>
-    </div>
+    <!-- Gradient Header -->
+    <div class="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 p-8 rounded-3xl shadow-2xl relative overflow-hidden">
+        <div class="absolute inset-0 bg-white/10 backdrop-blur-xl rounded-3xl"></div>
 
-    <table class="w-full text-left border">
-        <thead class="bg-gray-100">
-            <tr>
-                <th class="p-3">Name</th>
-                <th class="p-3">Code</th>
-                <th class="p-3">Duration</th>
-                <th class="p-3">Actions</th>
-            </tr>
-        </thead>
-        <tbody id="courseTable"></tbody>
-    </table>
-</div>
+        <div class="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+            <div>
+                <h2 class="text-4xl font-extrabold tracking-wide">Courses Management</h2>
+                <p class="text-white/80 mt-2">Manage all academic programs in your institution.</p>
+            </div>
 
-<!-- Modal -->
-<div id="modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-    <div class="bg-white p-6 rounded-2xl w-96">
-        <h3 class="text-xl font-bold mb-4">Course</h3>
-
-        <input id="name" placeholder="Course Name"
-            class="w-full mb-3 p-2 border rounded-xl">
-
-        <input id="code" placeholder="Course Code"
-            class="w-full mb-3 p-2 border rounded-xl">
-
-        <input id="duration" type="number" placeholder="Duration (years)"
-            class="w-full mb-4 p-2 border rounded-xl">
-
-        <div class="flex justify-end gap-2">
-            <button onclick="closeModal()" class="px-4 py-2 border rounded-xl">
-                Cancel
-            </button>
-            <button onclick="saveCourse()" 
-                class="bg-indigo-600 text-white px-4 py-2 rounded-xl">
-                Save
+            <button id="openModal"
+                class="px-6 py-3 bg-white text-indigo-700 font-semibold rounded-2xl shadow-xl hover:scale-105 transition duration-300">
+                + Add Course
             </button>
         </div>
     </div>
+
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+
+        <div class="bg-white/10 backdrop-blur-xl p-6 rounded-3xl shadow-xl hover:scale-105 transition">
+            <h4 class="text-lg font-semibold text-white/80">Total Courses</h4>
+            <p id="totalCourses" class="text-3xl font-bold mt-2">0</p>
+        </div>
+
+        <div class="bg-white/10 backdrop-blur-xl p-6 rounded-3xl shadow-xl hover:scale-105 transition">
+            <h4 class="text-lg font-semibold text-white/80">Total Semesters</h4>
+            <p id="totalSemesters" class="text-3xl font-bold mt-2">0</p>
+        </div>
+
+        <div class="bg-white/10 backdrop-blur-xl p-6 rounded-3xl shadow-xl hover:scale-105 transition">
+            <h4 class="text-lg font-semibold text-white/80">Avg Duration</h4>
+            <p id="avgDuration" class="text-3xl font-bold mt-2">0 yrs</p>
+        </div>
+
+    </div>
+
+    <!-- Search + Table Card -->
+    <div class="bg-white/10 backdrop-blur-2xl rounded-3xl shadow-2xl p-8">
+
+        <!-- Search -->
+        <div class="mb-6">
+            <input 
+                type="text" 
+                id="searchInput"
+                placeholder="🔍 Search courses..."
+                class="w-full md:w-80 px-5 py-3 rounded-2xl bg-white/20 border border-white/20 focus:outline-none focus:ring-2 focus:ring-indigo-400 placeholder-white/70 transition"
+            >
+        </div>
+
+        <!-- Table -->
+        <div class="overflow-x-auto">
+            <table class="min-w-full text-left">
+                <thead>
+                    <tr class="text-white/70 border-b border-white/20 text-sm uppercase tracking-wider">
+                        <th class="py-4 px-6">Course Name</th>
+                        <th class="py-4 px-6">Duration</th>
+                        <th class="py-4 px-6">Semesters</th>
+                        <th class="py-4 px-6 text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="coursesTable" class="divide-y divide-white/10 text-lg"></tbody>
+            </table>
+        </div>
+
+    </div>
+
 </div>
 
+
+<!-- Modal -->
+<div id="modalOverlay" class="fixed inset-0 bg-black/60 hidden items-center justify-center z-50 backdrop-blur-md">
+
+    <div id="modalBox"
+        class="bg-gradient-to-br from-indigo-600 via-purple-600 to-indigo-700 rounded-3xl shadow-2xl w-full max-w-md p-8 transform scale-95 opacity-0 transition-all duration-300">
+
+        <h3 class="text-2xl font-bold mb-6">Add New Course</h3>
+
+        <form id="courseForm" class="space-y-5">
+
+            {% csrf_token %}
+
+            <input type="text" id="courseName" required
+                placeholder="Course Name"
+                class="w-full px-5 py-3 rounded-2xl bg-white/20 border border-white/30 focus:outline-none focus:ring-2 focus:ring-white">
+
+            <input type="number" id="courseDuration" required min="1"
+                placeholder="Duration (Years)"
+                class="w-full px-5 py-3 rounded-2xl bg-white/20 border border-white/30 focus:outline-none focus:ring-2 focus:ring-white">
+
+            <input type="number" id="courseSemesters" required min="1"
+                placeholder="Total Semesters"
+                class="w-full px-5 py-3 rounded-2xl bg-white/20 border border-white/30 focus:outline-none focus:ring-2 focus:ring-white">
+
+            <div class="flex justify-end gap-4 pt-4">
+                <button type="button" id="closeModal"
+                    class="px-5 py-2 rounded-2xl bg-white/30 hover:bg-white/40 transition">
+                    Cancel
+                </button>
+
+                <button type="submit"
+                    class="px-5 py-2 rounded-2xl bg-white text-indigo-700 font-semibold hover:scale-105 transition">
+                    Save
+                </button>
+            </div>
+
+        </form>
+    </div>
+</div>
+
+
 <script>
-let editingId = null;
 
-function loadCourses() {
-    fetch("/academics/api/courses/")
-    .then(res => res.json())
-    .then(data => {
-        const table = document.getElementById("courseTable");
-        table.innerHTML = "";
+let courses = [
+    { id: 1, name: "Computer Science", duration: 4, semesters: 8 },
+    { id: 2, name: "Business Administration", duration: 3, semesters: 6 },
+    { id: 3, name: "Mechanical Engineering", duration: 4, semesters: 8 },
+    { id: 4, name: "Psychology", duration: 3, semesters: 6 }
+];
 
-        data.forEach(course => {
-            table.innerHTML += `
-                <tr class="border-t">
-                    <td class="p-3">${course.name}</td>
-                    <td class="p-3">${course.code}</td>
-                    <td class="p-3">${course.duration_years}</td>
-                    <td class="p-3 flex gap-2">
-                        <button onclick="editCourse(${course.id}, '${course.name}', '${course.code}', ${course.duration_years})"
-                            class="text-blue-600">Edit</button>
-                        <button onclick="deleteCourse(${course.id})"
-                            class="text-red-600">Delete</button>
-                    </td>
-                </tr>
-            `;
-        });
-    });
+const tableBody = document.getElementById("coursesTable");
+const searchInput = document.getElementById("searchInput");
+const modalOverlay = document.getElementById("modalOverlay");
+const modalBox = document.getElementById("modalBox");
+const openModalBtn = document.getElementById("openModal");
+const closeModalBtn = document.getElementById("closeModal");
+const courseForm = document.getElementById("courseForm");
+
+function updateStats() {
+    document.getElementById("totalCourses").innerText = courses.length;
+    const totalSem = courses.reduce((sum, c) => sum + c.semesters, 0);
+    document.getElementById("totalSemesters").innerText = totalSem;
+    const avgDur = (courses.reduce((sum, c) => sum + c.duration, 0) / courses.length).toFixed(1);
+    document.getElementById("avgDuration").innerText = avgDur + " yrs";
 }
 
+function renderTable(filteredCourses = courses) {
+    tableBody.innerHTML = "";
+
+    if (filteredCourses.length === 0) {
+        tableBody.innerHTML = `
+            <tr>
+                <td colspan="4" class="text-center py-10 text-white/60 text-xl">
+                    No courses found.
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    filteredCourses.forEach(course => {
+        const row = document.createElement("tr");
+        row.className = "hover:bg-white/10 transition duration-300";
+
+        row.innerHTML = `
+            <td class="py-4 px-6 font-semibold">${course.name}</td>
+            <td class="py-4 px-6">${course.duration} yrs</td>
+            <td class="py-4 px-6">${course.semesters}</td>
+            <td class="py-4 px-6 text-center">
+                <button onclick="deleteCourse(${course.id})"
+                    class="px-4 py-2 bg-red-500 hover:bg-red-600 rounded-2xl transition text-sm shadow-lg">
+                    Delete
+                </button>
+            </td>
+        `;
+        tableBody.appendChild(row);
+    });
+
+    updateStats();
+}
+
+searchInput.addEventListener("input", function () {
+    const value = this.value.toLowerCase();
+    const filtered = courses.filter(course =>
+        course.name.toLowerCase().includes(value)
+    );
+    renderTable(filtered);
+});
+
 function openModal() {
-    document.getElementById("modal").classList.remove("hidden");
+    modalOverlay.classList.remove("hidden");
+    modalOverlay.classList.add("flex");
+    setTimeout(() => {
+        modalBox.classList.remove("scale-95", "opacity-0");
+        modalBox.classList.add("scale-100", "opacity-100");
+    }, 10);
 }
 
 function closeModal() {
-    editingId = null;
-    document.getElementById("modal").classList.add("hidden");
+    modalBox.classList.add("scale-95", "opacity-0");
+    setTimeout(() => {
+        modalOverlay.classList.add("hidden");
+        modalOverlay.classList.remove("flex");
+        courseForm.reset();
+    }, 200);
 }
 
-function saveCourse() {
-    const name = document.getElementById("name").value;
-    const code = document.getElementById("code").value;
-    const duration = document.getElementById("duration").value;
+openModalBtn.addEventListener("click", openModal);
+closeModalBtn.addEventListener("click", closeModal);
 
-    const url = editingId 
-        ? `/academics/api/courses/${editingId}/update/`
-        : `/academics/api/courses/create/`;
+courseForm.addEventListener("submit", function (e) {
+    e.preventDefault();
 
-    const method = editingId ? "PUT" : "POST";
+    const name = document.getElementById("courseName").value.trim();
+    const duration = parseInt(document.getElementById("courseDuration").value);
+    const semesters = parseInt(document.getElementById("courseSemesters").value);
 
-    fetch(url, {
-        method: method,
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-            name: name,
-            code: code,
-            duration_years: duration
-        })
-    }).then(() => {
-        closeModal();
-        loadCourses();
+    courses.push({
+        id: Date.now(),
+        name,
+        duration,
+        semesters
     });
-}
 
-function editCourse(id, name, code, duration) {
-    editingId = id;
-    document.getElementById("name").value = name;
-    document.getElementById("code").value = code;
-    document.getElementById("duration").value = duration;
-    openModal();
-}
+    renderTable();
+    closeModal();
+});
 
 function deleteCourse(id) {
-    fetch(`/academics/api/courses/${id}/delete/`, {
-        method: "DELETE"
-    }).then(() => loadCourses());
+    if (confirm("Delete this course?")) {
+        courses = courses.filter(course => course.id !== id);
+        renderTable();
+    }
 }
 
-document.addEventListener("DOMContentLoaded", loadCourses);
+renderTable();
+
 </script>
 
 {% endblock %}

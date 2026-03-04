@@ -74,6 +74,7 @@ def signup(request):
                 first_name=name,
                 dob=dob,
             )
+            return redirect("student/dashboard")
 
         elif role == "lecturer":
 
@@ -90,6 +91,7 @@ def signup(request):
                 lecturer_id=lecturer_id,
                 first_name=name,
             )
+            return redirect("lecturer/dashboard")
 
         else:  # admin
 
@@ -113,7 +115,7 @@ def signup(request):
 
         return JsonResponse({
             "message": "User created successfully",
-            "redirect": f"/{role}-dashboard/"
+            "redirect": f"/{role}/dashboard/"
         })
 
     except Exception as e:
@@ -161,11 +163,11 @@ def login_view(request):
 
         # ROLE BASED REDIRECT
         if user.role == "admin":
-            return redirect("/admin-dashboard/")
+            return redirect("/admin/dashboard/")
         elif user.role == "student":
-            return redirect("/student-dashboard/")
+            return redirect("/student/dashboard/")
         elif user.role == "lecturer":
-            return redirect("/lecturer-dashboard/")
+            return redirect("/lecturer/dashboard/")
 
     return render(request, "accounts/login.html")
 
@@ -245,21 +247,21 @@ def check_enrollment(request, admission_id):
 @login_required
 def admin_dashboard(request):
     if request.user.role != "admin":
-        return redirect("/login/")
+        return redirect("login")
     return render(request, "admin/dashboard.html")
 
 
 @login_required
 def student_dashboard(request):
     if request.user.role != "student":
-        return redirect("/login/")
+        return redirect("login")
     return render(request, "student/dashboard.html")
 
 
 @login_required
 def lecturer_dashboard(request):
     if request.user.role != "lecturer":
-        return redirect("/login/")
+        return redirect("login")
     return render(request, "lecturer/dashboard.html")
 
 #  ADMIN 
