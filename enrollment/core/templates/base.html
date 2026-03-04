@@ -26,13 +26,14 @@
         <nav class="space-y-4">
 
             {% if user.role == "admin" %}
-                <a href="#" class="block text-gray-700 hover:text-indigo-600">Dashboard</a>
-                <a href="#" class="block text-gray-700 hover:text-indigo-600">Courses</a>
-                <a href="#" class="block text-gray-700 hover:text-indigo-600">Lecturers</a>
-                <a href="#" class="block text-gray-700 hover:text-indigo-600">Subjects</a>
-                <a href="#" class="block text-gray-700 hover:text-indigo-600">Timetable</a>
-                <a href="#" class="block text-gray-700 hover:text-indigo-600">Audit Logs</a>
-                <a href="#" class="block text-gray-700 hover:text-indigo-600">Attendance Data</a>
+                <a href="/accounts/admin-dashboard/" class="block text-gray-700 hover:text-indigo-600">Dashboard</a>
+                <a href="/accounts/admin/profile/" class="block text-gray-700 hover:text-indigo-600">Profile</a>
+                <a href="/accounts/admin/courses/" class="block text-gray-700 hover:text-indigo-600">Courses</a>
+                <a href="/accounts/admin/subjects" class="block text-gray-700 hover:text-indigo-600">Subjects</a>
+                <a href="/accounts/admin/lecturers/" class="block text-gray-700 hover:text-indigo-600">Lecturers</a>
+                <a href="/accounts/admin/timetable/" class="block text-gray-700 hover:text-indigo-600">Timetable</a>
+                <a href="/accounts/admin/audit-logs/" class="block text-gray-700 hover:text-indigo-600">Audit logs</a>
+                <a href="/accounts/admin/attendance-data/" class="block text-gray-700 hover:text-indigo-600">Attendance data</a>
             {% endif %}
 
             {% if user.role == "student" %}

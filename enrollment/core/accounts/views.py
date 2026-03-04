@@ -261,3 +261,75 @@ def lecturer_dashboard(request):
     if request.user.role != "lecturer":
         return redirect("/login/")
     return render(request, "lecturer/dashboard.html")
+
+#  ADMIN 
+
+@login_required
+def admin_profile(request):
+    return render(request, "admin/profile.html")
+
+@login_required
+def admin_courses(request):
+    return render(request, "admin/courses.html")
+
+@login_required
+def admin_subjects(request):
+    return render(request, "admin/subjects.html")
+
+@login_required
+def admin_lecturers(request):
+    return render(request, "admin/lecturers.html")
+
+@login_required
+def admin_timetable(request):
+    return render(request, "admin/timetable.html")
+
+@login_required
+def admin_audit_logs(request):
+    return render(request, "admin/audit_logs.html")
+
+@login_required
+def admin_attendance_data(request):
+    return render(request, "admin/attendance_data.html")
+
+
+#  STUDENT 
+
+@login_required
+def student_profile(request):
+    return render(request, "student/profile.html")
+
+@login_required
+def student_attendance(request):
+    return render(request, "student/attendance.html")
+
+@login_required
+def student_classes(request):
+    return render(request, "student/classes.html")
+
+@login_required
+def student_timetable(request):
+    return render(request, "student/timetable.html")
+
+@login_required
+def student_contact(request):
+    return render(request, "student/contact.html")
+
+
+# LECTURER 
+
+@login_required
+def lecturer_profile(request):
+    return render(request, "lecturer/profile.html")
+
+@login_required
+def lecturer_classes(request):
+    return render(request, "lecturer/classes.html")
+
+@login_required
+def lecturer_timetable(request):
+    return render(request, "lecturer/timetable.html")
+
+@login_required
+def lecturer_contact(request):
+    return render(request, "lecturer/contact.html")

@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+
+{% block page_title %}Courses{% endblock %}
+
+{% block content %}
+<div class="bg-white rounded-2xl shadow-xl p-6">
+
+    <div class="flex justify-between items-center mb-6">
+        <h2 class="text-2xl font-bold text-indigo-600">
+            Courses Management
+        </h2>
+
+        <button onclick="openModal()" 
+            class="bg-indigo-600 text-white px-4 py-2 rounded-xl hover:bg-indigo-700">
+            + Add Course
+        </button>
+    </div>
+
+    <table class="w-full text-left border">
+        <thead class="bg-gray-100">
+            <tr>
+                <th class="p-3">Name</th>
+                <th class="p-3">Code</th>
+                <th class="p-3">Duration</th>
+                <th class="p-3">Actions</th>
+            </tr>
+        </thead>
+        <tbody id="courseTable"></tbody>
+    </table>
+</div>
+
+<!-- Modal -->
+<div id="modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+    <div class="bg-white p-6 rounded-2xl w-96">
+        <h3 class="text-xl font-bold mb-4">Course</h3>
+
+        <input id="name" placeholder="Course Name"
+            class="w-full mb-3 p-2 border rounded-xl">
+
+        <input id="code" placeholder="Course Code"
+            class="w-full mb-3 p-2 border rounded-xl">
+
+        <input id="duration" type="number" placeholder="Duration (years)"
+            class="w-full mb-4 p-2 border rounded-xl">
+
+        <div class="flex justify-end gap-2">
+            <button onclick="closeModal()" class="px-4 py-2 border rounded-xl">
+                Cancel
+            </button>
+            <button onclick="saveCourse()" 
+                class="bg-indigo-600 text-white px-4 py-2 rounded-xl">
+                Save
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+let editingId = null;
+
+function loadCourses() {
+    fetch("/academics/api/courses/")
+    .then(res => res.json())
+    .then(data => {
+        const table = document.getElementById("courseTable");
+        table.innerHTML = "";
+
+        data.forEach(course => {
+            table.innerHTML += `
+                <tr class="border-t">
+                    <td class="p-3">${course.name}</td>
+                    <td class="p-3">${course.code}</td>
+                    <td class="p-3">${course.duration_years}</td>
+                    <td class="p-3 flex gap-2">
+                        <button onclick="editCourse(${course.id}, '${course.name}', '${course.code}', ${course.duration_years})"
+                            class="text-blue-600">Edit</button>
+                        <button onclick="deleteCourse(${course.id})"
+                            class="text-red-600">Delete</button>
+                    </td>
+                </tr>
+            `;
+        });
+    });
+}
+
+function openModal() {
+    document.getElementById("modal").classList.remove("hidden");
+}
+
+function closeModal() {
+    editingId = null;
+    document.getElementById("modal").classList.add("hidden");
+}
+
+function saveCourse() {
+    const name = document.getElementById("name").value;
+    const code = document.getElementById("code").value;
+    const duration = document.getElementById("duration").value;
+
+    const url = editingId 
+        ? `/academics/api/courses/${editingId}/update/`
+        : `/academics/api/courses/create/`;
+
+    const method = editingId ? "PUT" : "POST";
+
+    fetch(url, {
+        method: method,
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            name: name,
+            code: code,
+            duration_years: duration
+        })
+    }).then(() => {
+        closeModal();
+        loadCourses();
+    });
+}
+
+function editCourse(id, name, code, duration) {
+    editingId = id;
+    document.getElementById("name").value = name;
+    document.getElementById("code").value = code;
+    document.getElementById("duration").value = duration;
+    openModal();
+}
+
+function deleteCourse(id) {
+    fetch(`/academics/api/courses/${id}/delete/`, {
+        method: "DELETE"
+    }).then(() => loadCourses());
+}
+
+document.addEventListener("DOMContentLoaded", loadCourses);
+</script>
+
+{% endblock %}

@@ -29,5 +29,7 @@ urlpatterns = [
 
     # API Routes
     path('accounts/', include('accounts.urls')),
+
+    path("", include("academics.urls")),
 ]
 
