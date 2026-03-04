@@ -11,7 +11,7 @@ from .views import (
 
 urlpatterns = [
     path("spoof-log/", spoof_log),
-    path("dashboard/admin/courses/", courses_page, name="courses_page"),
+    path("/admin/dashboard/courses/", courses_page, name="courses_page"),
     path("api/courses/", get_courses),
     path("api/courses/create/", create_course),
     path("api/courses/<int:course_id>/update/", update_course),

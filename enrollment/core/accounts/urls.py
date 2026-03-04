@@ -37,7 +37,19 @@ from .views import (
     lecturer_contact,
     lecturer_profile,
     lecturer_timetable,
-    
+    admin_add_course,
+    admin_add_subject,
+    admin_add_lecturer,
+
+    # ADD THESE
+    admin_edit_course,
+    admin_delete_course,
+    edit_subject,
+    delete_subject,
+    admin_edit_lecturer,
+    admin_delete_lecturer,
+    audit_log_detail,
+    export_audit_logs,
 )
 
 urlpatterns = [
@@ -65,6 +77,27 @@ urlpatterns = [
     path("admin/timetable/", admin_timetable, name="admin_timetable"),
     path("admin/audit-logs/", admin_audit_logs, name="admin_audit_logs"),
     path("admin/attendance-data/", admin_attendance_data, name="admin_attendance_data"),
+
+    # ADD ACTIONS
+    path("admin/add-course/", admin_add_course, name="admin_add_course"),
+    path("admin/add-subject/", admin_add_subject, name="admin_add_subject"),
+    path("admin/add-lecturer/", admin_add_lecturer, name="admin_add_lecturer"),
+    path("admin/edit-course/<int:id>/", admin_edit_course, name="admin_edit_course"),
+
+    # COURSE EDIT/DELETE
+    path("admin/delete-course/<int:id>/", admin_delete_course, name="admin_delete_course"),
+
+    # SUBJECT EDIT/DELETE
+    path("admin/edit-subject/<int:id>/", edit_subject, name="edit_subject"),
+    path("admin/delete-subject/<int:id>/", delete_subject, name="delete_subject"),
+
+    # LECTURER EDIT/DELETE
+    path("admin/edit-lecturer/<int:id>/", admin_edit_lecturer, name="admin_edit_lecturer"),
+    path("admin/delete-lecturer/<int:id>/", admin_delete_lecturer, name="admin_delete_lecturer"),
+
+    # AUDIT
+    path("admin/audit-detail/<int:id>/", audit_log_detail, name="audit_log_detail"),
+    path("admin/export-audit/", export_audit_logs, name="export_audit_logs"),
 
     # STUDENT
     path("student/profile/", student_profile, name="student_profile"),

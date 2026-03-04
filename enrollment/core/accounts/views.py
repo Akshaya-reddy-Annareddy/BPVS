@@ -13,6 +13,14 @@ from academics.models import Course, Subject, Timetable, AuditLog
 from accounts.models import User
 from attendance.models import AttendanceRecord
 from django.utils import timezone
+from .decorators import admin_required
+from django.views.decorators.http import require_POST
+
+from django.core.paginator import Paginator
+from django.http import HttpResponse
+import csv
+from io import TextIOWrapper
+from django.contrib import messages
 
 User = get_user_model()
 
@@ -119,7 +127,7 @@ def signup(request):
 
         return JsonResponse({
             "message": "User created successfully",
-            "redirect": f"/{role}/dashboard/"
+            "redirect": f"/admin/dashboard/"
         })
 
     except Exception as e:
@@ -167,11 +175,11 @@ def login_view(request):
 
         # ROLE BASED REDIRECT
         if user.role == "admin":
-            return redirect("/admin/dashboard/")
+            return redirect("admin_dashboard")
         elif user.role == "student":
-            return redirect("/student/dashboard/")
+            return redirect("student_dashboard")
         elif user.role == "lecturer":
-            return redirect("/lecturer/dashboard/")
+            return redirect("lecturer_dashboard")
 
     return render(request, "accounts/login.html")
 
@@ -248,7 +256,7 @@ def check_enrollment(request, admission_id):
 
 #Dashborad views
 
-@login_required
+@admin_required
 def admin_dashboard(request):
     today = timezone.localdate()
 
@@ -258,7 +266,8 @@ def admin_dashboard(request):
     today_attendance = AttendanceRecord.objects.filter(
         attendance_date=today
     ).count()
-
+    
+    print("ROLE:", request.user.role)
     return render(request, "admin/dashboard.html", {
         "total_students": total_students,
         "total_lecturers": total_lecturers,
@@ -282,11 +291,11 @@ def lecturer_dashboard(request):
 
 #  ADMIN 
 
-@login_required
+@admin_required
 def admin_profile(request):
     return render(request, "admin/profile.html")
 
-@login_required
+@admin_required
 def admin_courses(request):
     if request.user.role != "admin":
         return redirect("login")
@@ -297,7 +306,7 @@ def admin_courses(request):
         "courses": courses
     })
 
-@login_required
+@admin_required
 def admin_subjects(request):
     if request.user.role != "admin":
         return redirect("login")
@@ -308,7 +317,7 @@ def admin_subjects(request):
         "subjects": subjects
     })
 
-@login_required
+@admin_required
 def admin_lecturers(request):
     if request.user.role != "admin":
         return redirect("login")
@@ -319,22 +328,53 @@ def admin_lecturers(request):
         "lecturers": lecturers
     })
 
-@login_required
+
+@admin_required
 def admin_timetable(request):
-    if request.user.role != "admin":
-        return redirect("login")
+
+    if request.method == "POST" and request.FILES.get("csv_file"):
+        csv_file = request.FILES["csv_file"]
+        file_data = TextIOWrapper(csv_file.file, encoding="utf-8")
+        reader = csv.DictReader(file_data)
+
+        for row in reader:
+            # Safe get or create
+            course, _ = Course.objects.get_or_create(name=row["course"])
+            subject, _ = Subject.objects.get_or_create(
+                name=row["subject"],
+                course=course
+            )
+            lecturer = User.objects.filter(
+                lecturer_id=row["lecturer_id"],
+                role="lecturer"
+            ).first()
+
+            if not lecturer:
+                messages.error(request, f"Lecturer {row['lecturer_id']} not found")
+                continue
+
+            Timetable.objects.create(
+                course=course,
+                subject=subject,
+                lecturer=lecturer,
+                day=row["day"],
+                start_time=row["start_time"],
+                end_time=row["end_time"],
+                room_number=row["room_number"]
+            )
+
+        messages.success(request, "Timetable uploaded successfully")
+        return redirect("admin_timetable")
 
     timetables = Timetable.objects.select_related(
-        "course",
-        "subject",
-        "lecturer"
+        "course", "subject", "lecturer"
     )
 
     return render(request, "admin/timetable.html", {
         "timetables": timetables
     })
 
-@login_required
+@admin_required
 def admin_audit_logs(request):
     if request.user.role != "admin":
         return redirect("login")
@@ -345,7 +385,7 @@ def admin_audit_logs(request):
         "logs": logs
     })
 
-@login_required
+@admin_required
 def admin_attendance_data(request):
     if request.user.role != "admin":
         return redirect("login")
@@ -362,6 +402,132 @@ def admin_attendance_data(request):
     })
 
 
+@admin_required
+@require_POST
+def admin_add_course(request):
+    name = request.POST.get("name")
+    if name:
+        Course.objects.create(name=name)
+    return redirect("admin_courses")
+
+
+@admin_required
+@require_POST
+def admin_add_subject(request):
+    name = request.POST.get("name")
+    course_id = request.POST.get("course_id")
+
+    if name and course_id:
+        course = Course.objects.get(id=course_id)
+        Subject.objects.create(name=name, course=course)
+
+    return redirect("admin_subjects")
+
+
+@admin_required
+@require_POST
+def admin_add_lecturer(request):
+    lecturer_id = request.POST.get("lecturer_id")
+    name = request.POST.get("name")
+    password = request.POST.get("password")
+
+    if lecturer_id and password:
+        User.objects.create_user(
+            username=lecturer_id,
+            password=password,
+            role="lecturer",
+            lecturer_id=lecturer_id,
+            first_name=name
+        )
+
+    return redirect("admin_lecturers")
+
+@admin_required
+def admin_edit_course(request, id):
+    course = Course.objects.get(id=id)
+
+    if request.method == "POST":
+        course.name = request.POST.get("name")
+        course.duration = request.POST.get("duration")
+        course.semesters = request.POST.get("semesters")
+        course.save()
+        return redirect("admin_courses")
+
+    return render(request, "admin/edit_course.html", {"course": course})
+
+
+@admin_required
+def admin_delete_course(request, id):
+    course = Course.objects.get(id=id)
+    course.delete()
+    return redirect("admin_courses")
+
+@admin_required
+def edit_subject(request, id):
+    subject = Subject.objects.get(id=id)
+
+    if request.method == "POST":
+        subject.name = request.POST.get("name")
+        subject.semester = request.POST.get("semester")
+        subject.credits = request.POST.get("credits")
+        subject.status = request.POST.get("status")
+        subject.save()
+        return redirect("admin_subjects")
+
+    return render(request, "admin/edit_subject.html", {"subject": subject})
+
+
+@admin_required
+def delete_subject(request, id):
+    subject = Subject.objects.get(id=id)
+    subject.delete()
+    return redirect("admin_subjects")
+
+@admin_required
+def admin_edit_lecturer(request, id):
+    lecturer = User.objects.get(id=id, role="lecturer")
+
+    if request.method == "POST":
+        lecturer.first_name = request.POST.get("name")
+        lecturer.save()
+        return redirect("admin_lecturers")
+
+    return render(request, "admin/edit_lecturer.html", {"lecturer": lecturer})
+
+
+@admin_required
+def admin_delete_lecturer(request, id):
+    lecturer = User.objects.get(id=id, role="lecturer")
+    lecturer.delete()
+    return redirect("admin_lecturers")
+
+@admin_required
+def audit_log_detail(request, id):
+    log = AuditLog.objects.get(id=id)
+    return render(request, "admin/audit_detail.html", {"log": log})
+
+
+@admin_required
+def export_audit_logs(request):
+    logs = AuditLog.objects.all()
+
+    response = HttpResponse(content_type="text/csv")
+    response["Content-Disposition"] = 'attachment; filename="audit_logs.csv"'
+
+    writer = csv.writer(response)
+    writer.writerow(["Event ID", "Type", "Actor", "Role", "Severity", "Timestamp"])
+
+    for log in logs:
+        writer.writerow([
+            log.event_id,
+            log.event_type,
+            log.actor_name,
+            log.actor_role,
+            log.severity,
+            log.timestamp
+        ])
+
+    return response
 #  STUDENT 
 
 @login_required

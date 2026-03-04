@@ -20,7 +20,7 @@ from django.urls import path, include
 from .views import home, auth_page, attendance_page
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
+    path('django-admin/', admin.site.urls),
 
     # Frontend Pages
     path('', home),                 # http://127.0.0.1:8000/
@@ -31,5 +31,6 @@ urlpatterns = [
     path('accounts/', include('accounts.urls')),
 
     path("", include("academics.urls")),
+    
 ]
 
