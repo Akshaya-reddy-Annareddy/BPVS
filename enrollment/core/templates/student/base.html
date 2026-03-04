@@ -1,0 +1,117 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Student Panel</title>
+
+    <!-- Tailwind CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        body {
+            background: #0f172a;
+        }
+
+        .glass {
+            background: rgba(255,255,255,0.05);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255,255,255,0.08);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+        }
+
+        .sidebar {
+            transition: transform .3s ease;
+        }
+
+        .sidebar-hidden {
+            transform: translateX(-100%);
+        }
+    </style>
+</head>
+
+<body class="text-white min-h-screen flex">
+
+<!-- Sidebar -->
+<div id="sidebar"
+     class="sidebar sidebar-hidden fixed z-40 inset-y-0 left-0 w-64 bg-slate-900 p-6 space-y-6">
+
+    <h2 class="text-2xl font-bold text-indigo-400 mb-6">
+        Smart Attendance
+    </h2>
+
+    <nav class="space-y-4 text-sm">
+
+        <a href="{% url 'student_dashboard' %}"
+           class="block hover:text-indigo-400">Dashboard</a>
+
+        <a href="{% url 'student_profile' %}"
+           class="block hover:text-indigo-400">Profile</a>
+
+        <a href="{% url 'student_timetable' %}"
+           class="block hover:text-indigo-400">View Classes</a>
+
+        <a href="{% url 'student_attendance' %}"
+           class="block hover:text-indigo-400">View Attendance</a>
+
+        <a href="{% url 'student_mark' %}"
+           class="block hover:text-indigo-400">Mark Attendance</a>
+
+        <a href="{% url 'student_contact_admin' %}"
+           class="block hover:text-indigo-400">Contact Admin</a>
+
+    </nav>
+</div>
+
+<!-- Main Content -->
+<div class="flex-1 flex flex-col">
+
+    <!-- Top Bar -->
+    <div class="flex justify-between items-center px-6 py-4 bg-slate-900 shadow-lg">
+
+        <!-- Hamburger -->
+        <button onclick="toggleSidebar()" class="text-white text-2xl">
+            ☰
+        </button>
+
+        <!-- Welcome -->
+        <div class="text-indigo-400 font-semibold">
+            Welcome, {{ request.user.username }}
+        </div>
+
+        <!-- Profile Icon -->
+        <div class="relative group">
+            <div class="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center cursor-pointer">
+                {{ request.user.username|slice:":1"|upper }}
+            </div>
+
+            <div class="absolute right-0 mt-2 w-48 glass rounded-xl p-3 hidden group-hover:block">
+                <a href="{% url 'student_profile' %}" class="block py-1 hover:text-indigo-400">Profile</a>
+                <a href="{% url 'logout' %}" class="block py-1 hover:text-red-400">Logout</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification (Active Attendance) -->
+    {% if active_session %}
+    <div class="bg-green-600 text-white text-center py-2 animate-pulse">
+        📢 Lecturer started attendance. Mark your attendance now!
+    </div>
+    {% endif %}
+
+    <!-- Page Content -->
+    <div class="p-8">
+        {% block content %}
+        {% endblock %}
+    </div>
+
+</div>
+
+<script>
+function toggleSidebar() {
+    document.getElementById("sidebar").classList.toggle("sidebar-hidden");
+}
+</script>
+
+</body>
+</html>

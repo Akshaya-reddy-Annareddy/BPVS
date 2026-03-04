@@ -1,7 +1,7 @@
 from django.db import models
 from django.conf import settings
 from django.utils import timezone
-from academics.models import Subject, Course
+from academics.models import Subject, Course, Timetable
 
 class AttendanceRecord(models.Model):
 
@@ -62,3 +62,34 @@ def get_attendance_percentage(student, subject):
         return 0
 
     return round((attended / total_classes) * 100, 2)
+
+class AttendanceSession(models.Model):
+    timetable = models.ForeignKey(Timetable, on_delete=models.CASCADE)
+    date = models.DateField()
+    is_active = models.BooleanField(default=False)
+    started_at = models.DateTimeField(null=True, blank=True)
+    ended_at = models.DateTimeField(null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.timetable} - {self.date}"
+
+class Complaint(models.Model):
+    student = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        limit_choices_to={'role': 'student'}
+    )
+    subject = models.CharField(max_length=200)
+    message = models.TextField()
+    status = models.CharField(
+        max_length=20,
+        choices=[
+            ("pending", "Pending"),
+            ("resolved", "Resolved"),
+        ],
+        default="pending"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.student.username} - {self.subject}"

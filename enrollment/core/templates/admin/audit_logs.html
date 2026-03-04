@@ -76,14 +76,7 @@ input:focus,select:focus{
 <!-- ================= SUMMARY CARDS ================= -->
 <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6 gap-8 mb-12">
 
-    {% for label,value,color in [
-        ("Total Logs Today", stats.today_count, "text-white"),
-        ("This Month", stats.month_count, "text-white"),
-        ("Critical Events", stats.critical_count, "text-red-400"),
-        ("Failed Liveness", stats.liveness_failed, "text-yellow-400"),
-        ("Spoof Attempts", stats.spoof_count, "text-orange-400"),
-        ("Manual Edits", stats.manual_edits, "text-blue-400"),
-    ] %}
+    {% for label,value,color in stats_cards %}
     <div class="gradient-border hover-lift">
         <div class="glass p-6">
             <p class="text-white/60 text-sm uppercase tracking-wide mb-2">

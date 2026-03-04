@@ -1,14 +1,83 @@
-{% extends "base.html" %}
-
-{% block page_title %}Student Dashboard{% endblock %}
-
+{% extends "student/base.html" %}
 {% block content %}
-<div class="bg-white rounded-2xl shadow-xl p-6">
-    <h2 class="text-2xl font-bold text-indigo-600 mb-4">
-        Welcome Student 👋
-    </h2>
-    <p class="text-gray-600">
-        Here you will see classes, your attendance.
-    </p>
+
+<div class="space-y-10">
+
+    <!-- Stats Cards -->
+    <div class="grid md:grid-cols-3 gap-8">
+
+        <div class="glass p-6 rounded-2xl">
+            <p class="text-white/60 text-sm">Total Subjects</p>
+            <h2 class="text-3xl font-bold mt-2 text-indigo-400">
+                {{ total_subjects }}
+            </h2>
+        </div>
+
+        <div class="glass p-6 rounded-2xl">
+            <p class="text-white/60 text-sm">Total Attendance Records</p>
+            <h2 class="text-3xl font-bold mt-2 text-green-400">
+                {{ total_attendance }}
+            </h2>
+        </div>
+
+        <div class="glass p-6 rounded-2xl">
+            <p class="text-white/60 text-sm">Face Enrollment Status</p>
+            {% if face_enrolled %}
+                <h2 class="text-xl font-bold mt-2 text-green-400">
+                    Enrolled ✓
+                </h2>
+            {% else %}
+                <h2 class="text-xl font-bold mt-2 text-red-400">
+                    Not Enrolled
+                </h2>
+                <a href="{% url 'student_enroll' %}"
+                   class="inline-block mt-3 px-4 py-2 bg-indigo-600 rounded-xl hover:bg-indigo-700">
+                    Enroll Now
+                </a>
+            {% endif %}
+        </div>
+
+    </div>
+
+    <!-- Today's Classes -->
+    <div class="glass p-8 rounded-2xl">
+        <h3 class="text-2xl font-bold mb-6 text-indigo-400">
+            Today's Classes
+        </h3>
+
+        {% if todays_classes %}
+            <div class="space-y-4">
+                {% for class in todays_classes %}
+                    <div class="flex justify-between items-center p-4 bg-white/5 rounded-xl">
+                        <div>
+                            <p class="font-semibold">{{ class.subject.name }}</p>
+                            <p class="text-white/60 text-sm">
+                                {{ class.start_time }} - {{ class.end_time }}
+                            </p>
+                            <p class="text-white/60 text-sm">
+                                Lecturer: {{ class.lecturer.username }}
+                            </p>
+                        </div>
+
+                        {% if active_session %}
+                            <a href="{% url 'student_mark' %}"
+                               class="px-4 py-2 bg-green-600 rounded-xl hover:bg-green-700">
+                                Mark Attendance
+                            </a>
+                        {% else %}
+                            <button disabled
+                                class="px-4 py-2 bg-gray-600 rounded-xl cursor-not-allowed">
+                                Not Active
+                            </button>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="text-white/60">No classes today.</p>
+        {% endif %}
+    </div>
+
 </div>
+
 {% endblock %}

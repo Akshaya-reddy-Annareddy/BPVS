@@ -1,6 +1,8 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
+from academics.models import Course
+
 class User(AbstractUser):
     ROLE_CHOICES = (
         ('student', 'Student'),
@@ -24,6 +26,15 @@ class User(AbstractUser):
     face_enrolled = models.BooleanField(default=False)
     re_enroll_used = models.BooleanField(default=False) #ONE self re-enroll allowed
     admin_reenroll_allowed = models.BooleanField(default=False) #Admin override.
+
+    course = models.ForeignKey(
+        Course,
+        on_delete=models.SET_NULL,
+        null=True,
+            blank=True
+    )
+
+    year = models.IntegerField(null=True, blank=True)
 
     def __str__(self):
         if self.role == "student":

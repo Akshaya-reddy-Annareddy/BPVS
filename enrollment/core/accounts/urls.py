@@ -13,6 +13,7 @@ urlpatterns = [
 
 from django.urls import path
 from django.contrib.auth.views import LogoutView
+from .student_views import *
 from .views import (
     signup,
     login_view,
@@ -100,11 +101,12 @@ urlpatterns = [
     path("admin/export-audit/", export_audit_logs, name="export_audit_logs"),
 
     # STUDENT
+    path("student/dashboard/", student_dashboard, name="student_dashboard"),
     path("student/profile/", student_profile, name="student_profile"),
     path("student/attendance/", student_attendance, name="student_attendance"),
-    path("student/classes/", student_classes, name="student_classes"),
     path("student/timetable/", student_timetable, name="student_timetable"),
-    path("student/contact/", student_contact, name="student_contact"),
+    path("student/mark-attendance/", student_mark_attendance, name="student_mark_attendance"),
+    path("student/contact/", student_contact_admin, name="student_contact_admin"),
 
     # LECTURER
     path("lecturer/profile/", lecturer_profile, name="lecturer_profile"),

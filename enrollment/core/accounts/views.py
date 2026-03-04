@@ -21,6 +21,9 @@ from django.http import HttpResponse
 import csv
 from io import TextIOWrapper
 from django.contrib import messages
+from django.db.models import Count
+from django.utils.timezone import now
+from datetime import timedelta
 
 User = get_user_model()
 
@@ -376,13 +379,57 @@ def admin_timetable(request):
 
 @admin_required
 def admin_audit_logs(request):
-    if request.user.role != "admin":
-        return redirect("login")
 
     logs = AuditLog.objects.all().order_by("-timestamp")
 
+    # ================= FILTERS =================
+    from_date = request.GET.get("from")
+    to_date = request.GET.get("to")
+    search = request.GET.get("search")
+
+    if from_date:
+        logs = logs.filter(timestamp__date__gte=from_date)
+
+    if to_date:
+        logs = logs.filter(timestamp__date__lte=to_date)
+
+    if search:
+        logs = logs.filter(
+            admission_id__icontains=search
+        ) | logs.filter(
+            class_name__icontains=search
+        ) | logs.filter(
+            reason__icontains=search
+        )
+
+    # ================= PAGINATION =================
+    paginator = Paginator(logs, 10)
+    page_number = request.GET.get("page")
+    page_obj = paginator.get_page(page_number)
+
+    # ================= STATS =================
+    today = now().date()
+    month_start = today.replace(day=1)
+
+    today_count = AuditLog.objects.filter(timestamp__date=today).count()
+    month_count = AuditLog.objects.filter(timestamp__date__gte=month_start).count()
+
+    # Build cards directly (no stats dict needed)
+    stats_cards = [
+        ("Total Logs Today", today_count, "text-white"),
+        ("This Month", month_count, "text-white"),
+        ("Critical Events", 0, "text-red-400"),
+        ("Failed Liveness", 0, "text-yellow-400"),
+        ("Spoof Attempts", 0, "text-orange-400"),
+        ("Manual Edits", 0, "text-blue-400"),
+    ]
+
     return render(request, "admin/audit_logs.html", {
-        "logs": logs
+        "page_obj": page_obj,
+        "stats_cards": stats_cards,
+        "event_types": [],
+        "severities": [],
+        "roles": [],
     })
 
 @admin_required
