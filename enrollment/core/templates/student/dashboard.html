@@ -30,7 +30,7 @@
                 <h2 class="text-xl font-bold mt-2 text-red-400">
                     Not Enrolled
                 </h2>
-                <a href="{% url 'student_enroll' %}"
+                <a href="{% url 'student_enrollment_instructions' %}"
                    class="inline-block mt-3 px-4 py-2 bg-indigo-600 rounded-xl hover:bg-indigo-700">
                     Enroll Now
                 </a>
@@ -60,7 +60,7 @@
                         </div>
 
                         {% if active_session %}
-                            <a href="{% url 'student_mark' %}"
+                            <a href="{% url 'attendance_pipeline' %}"
                                class="px-4 py-2 bg-green-600 rounded-xl hover:bg-green-700">
                                 Mark Attendance
                             </a>

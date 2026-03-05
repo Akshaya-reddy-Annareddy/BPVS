@@ -186,7 +186,23 @@ async function checkStatus(jobId) {
             clearInterval(interval);
             document.getElementById("status").innerText = "Face enrolled successfully";
             alert("Face enrolled successfully");
-            window.location.href = "http://127.0.0.1:8000/student/dashboard/";
+            fetch("/accounts/api/mark-face-enrolled/", {
+                method: "POST",
+                headers: {
+                    "X-CSRFToken": getCookie("csrftoken"),
+                },
+            })
+            .then(response => response.json())
+            .then(data => {
+
+                if (data.status === "success") {
+
+                    window.location.href = "/accounts/student/dashboard/";
+
+                }
+
+            });
+
             isProcessing = false;
         }
 
@@ -199,6 +215,28 @@ async function checkStatus(jobId) {
     }, 3000);
 }
 
+
+function getCookie(name) {
+    let cookieValue = null;
+
+    if (document.cookie && document.cookie !== "") {
+
+        const cookies = document.cookie.split(";");
+
+        for (let i = 0; i < cookies.length; i++) {
+
+            const cookie = cookies[i].trim();
+
+            if (cookie.substring(0, name.length + 1) === (name + "=")) {
+
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+
+    return cookieValue;
+}
 
 </script>
 

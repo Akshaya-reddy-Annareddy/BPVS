@@ -24,6 +24,9 @@ from django.contrib import messages
 from django.db.models import Count
 from django.utils.timezone import now
 from datetime import timedelta
+from attendance.models import AttendanceSession
+from datetime import date
+from backend.services.vector_service import delete_embedding_by_admission
 
 User = get_user_model()
 
@@ -89,7 +92,7 @@ def signup(request):
                 first_name=name,
                 dob=dob,
             )
-            return redirect("student/dashboard")
+            return redirect("student_dashboard")
 
         elif role == "lecturer":
 
@@ -186,8 +189,10 @@ def login_view(request):
 
     return render(request, "accounts/login.html")
 
-@csrf_exempt
+
+@login_required
 def mark_face_enrolled(request):
+
     if request.method != "POST":
         return JsonResponse({"error": "POST required"}, status=400)
 
@@ -203,10 +208,19 @@ def mark_face_enrolled(request):
         if not user:
             return JsonResponse({"error": "Student not found"}, status=404)
 
+        # Delete previous embeddings if re-enrolling
+        if user.allow_reenroll:
+            delete_embedding_by_admission(admission_id)
+
+        # Update flags
         user.face_enrolled = True
+        user.allow_reenroll = False
+        user.re_enroll_used = True
         user.save()
 
-        return JsonResponse({"message": "Face enrollment status updated"})
+        return JsonResponse({
+            "message": "Face enrollment completed successfully"
+        })
 
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
@@ -284,7 +298,7 @@ def student_dashboard(request):
     if request.user.role != "student":
         return redirect("login")
     if not request.user.face_enrolled:
-        return redirect("student_enroll")
+        return redirect("enrollment_instructions")
     return render(request, "student/dashboard.html")
 
 
@@ -589,7 +603,34 @@ def student_attendance(request):
 
 @login_required
 def student_classes(request):
-    return render(request, "student/classes.html")
+
+    user = request.user
+    today = date.today()
+
+    classes = Timetable.objects.filter(
+        course=user.course,
+        year=user.year,
+        day=today.strftime("%A")
+    )
+
+    class_list = []
+
+    for cls in classes:
+
+        active = AttendanceSession.objects.filter(
+            timetable=cls,
+            date=today,
+            is_active=True
+        ).exists()
+
+        cls.session_active = active
+        class_list.append(cls)
+
+    return render(
+        request,
+        "student/classes.html",
+        {"todays_classes": class_list}
+    )
 
 @login_required
 def student_timetable(request):
@@ -599,8 +640,27 @@ def student_timetable(request):
 def student_contact(request):
     return render(request, "student/contact.html")
 
-def student_enrollment_instructions(request):
-    return render(request, "student/enrollment_instructions.html")
+@login_required
+def enrollment_instructions(request):
+
+    user = request.user
+
+    # If student is re-enrolling
+    if user.role == "student" and user.allow_reenroll:
+
+        # Delete old face embedding from Qdrant
+        delete_embedding_by_admission(user.admission_id)
+
+        # Reset enrollment state
+        user.face_enrolled = False
+        user.allow_reenroll = False
+        user.save()
+
+    return render(request, "enrollment/instructions.html")
+
+@login_required
+def enrollment_pipeline(request):
+    return render(request, "index.html")
 
 # LECTURER 
 
@@ -620,18 +680,19 @@ def lecturer_timetable(request):
 def lecturer_contact(request):
     return render(request, "lecturer/contact.html")
 
-@csrf_exempt
-def mark_face_enrolled(request):
+def signup_view(request):
 
-    data = json.loads(request.body)
-    admission_id = data.get("admission_id")
+    if request.method == "POST":
+        username = request.POST.get("username")
+        password = request.POST.get("password")
 
-    try:
-        user = User.objects.get(admission_id=admission_id)
-        user.face_enrolled = True
-        user.save()
+        user = User.objects.create_user(
+            username=username,
+            password=password
+        )
 
-        return JsonResponse({"status": "ok"})
+        login(request, user)
 
-    except User.DoesNotExist:
-        return JsonResponse({"error": "User not found"})
+        return redirect("enrollment_page")
+
+    return redirect("/auth/")

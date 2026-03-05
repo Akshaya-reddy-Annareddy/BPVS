@@ -1,101 +1,128 @@
-{% extends "admin/base.html" %}
-
-{% block page_title %}Admin Profile{% endblock %}
-{% block header_title %}Admin Profile{% endblock %}
-
+{% extends "student/base.html" %}
 {% block content %}
 
-<div class="space-y-12">
+<div class="max-w-3xl mx-auto space-y-10">
 
-    <!-- ================= PROFILE INFO ================= -->
-    <div class="glass p-10 rounded-3xl shadow-2xl">
-
-        <h2 class="text-3xl font-bold mb-8">
-            Account Information
+    <!-- Profile Details -->
+    <div class="glass p-8 rounded-2xl">
+        <h2 class="text-2xl font-bold mb-6 text-indigo-400">
+            Profile Details
         </h2>
 
-        <div class="grid md:grid-cols-2 gap-8">
+        <div class="grid md:grid-cols-2 gap-6">
 
             <div>
-                <p class="text-white/60 text-sm mb-1">Full Name</p>
-                <p class="text-xl font-semibold">
-                    {{ request.user.get_full_name|default:request.user.username }}
-                </p>
+                <label class="text-sm text-white/60">Username</label>
+                <input type="text"
+                       value="{{ request.user.username }}"
+                       class="w-full mt-2 p-3 rounded-xl bg-white/5 border border-white/10"
+                       disabled>
             </div>
 
             <div>
-                <p class="text-white/60 text-sm mb-1">Admin ID / Username</p>
-                <p class="text-xl font-semibold">
-                    {{ request.user.username }}
-                </p>
+                <label class="text-sm text-white/60">Admission ID</label>
+                <input type="text"
+                       value="{{ request.user.admission_id }}"
+                       class="w-full mt-2 p-3 rounded-xl bg-white/5 border border-white/10"
+                       disabled>
             </div>
 
             <div>
-                <p class="text-white/60 text-sm mb-1">Email</p>
-                <p class="text-xl font-semibold">
-                    {{ request.user.email|default:"Not Provided" }}
-                </p>
+                <label class="text-sm text-white/60">Course</label>
+                <input type="text"
+                       value="{{ request.user.course }}"
+                       class="w-full mt-2 p-3 rounded-xl bg-white/5 border border-white/10"
+                       disabled>
             </div>
 
             <div>
-                <p class="text-white/60 text-sm mb-1">Role</p>
-                <p class="text-xl font-semibold text-indigo-300">
-                    Administrator
-                </p>
+                <label class="text-sm text-white/60">Year</label>
+                <input type="text"
+                       value="{{ request.user.year }}"
+                       class="w-full mt-2 p-3 rounded-xl bg-white/5 border border-white/10"
+                       disabled>
             </div>
 
         </div>
+    </div>
+
+
+    <!-- Change Password -->
+    <div class="glass p-8 rounded-2xl">
+        <h2 class="text-xl font-bold mb-6 text-indigo-400">
+            Change Password
+        </h2>
+
+        <form method="POST">
+            {% csrf_token %}
+
+            <div class="space-y-4">
+
+                <input type="password"
+                       name="current_password"
+                       placeholder="Current Password"
+                       required
+                       class="w-full p-3 rounded-xl bg-white/5 border border-white/10">
+
+                <input type="password"
+                       name="new_password"
+                       placeholder="New Password"
+                       required
+                       class="w-full p-3 rounded-xl bg-white/5 border border-white/10">
+
+                <button type="submit"
+                        class="px-6 py-3 bg-indigo-600 rounded-xl hover:bg-indigo-700">
+                    Update Password
+                </button>
+
+            </div>
+
+        </form>
+    </div>
+
+
+    <!-- Face Re-Enrollment -->
+    <div class="glass p-8 rounded-2xl text-center">
+
+        <h2 class="text-xl font-bold mb-4 text-indigo-400">
+            Face Re-Enrollment
+        </h2>
+
+        <p class="text-white/60 mb-6">
+            If your face recognition stops working, you can re-enroll your face once.
+            After that you must request admin permission.
+        </p>
+
+        {% if request.user.re_enroll_used %}
+
+            <button disabled
+                    class="px-6 py-3 bg-gray-600 rounded-xl cursor-not-allowed">
+                Re-Enroll Already Used
+            </button>
+
+        {% else %}
+
+            <a href="{% url 'student_enrollment_instructions' %}"
+               class="px-6 py-3 bg-yellow-600 rounded-xl hover:bg-yellow-700">
+                Re-Enroll Face
+            </a>
+
+        {% endif %}
 
     </div>
 
 
-    <!-- ================= CHANGE PASSWORD ================= -->
-    <div class="glass p-10 rounded-3xl shadow-2xl max-w-xl">
+    <!-- Logout -->
+    <div class="glass p-8 rounded-2xl text-center">
 
-        <h2 class="text-2xl font-bold mb-8">
-            Change Password
+        <h2 class="text-xl font-bold mb-4 text-red-400">
+            Logout
         </h2>
 
-        {% if messages %}
-            {% for message in messages %}
-                <div class="mb-4 px-4 py-3 rounded-xl
-                    {% if message.tags == 'success' %}
-                        bg-green-500/20 text-green-400
-                    {% else %}
-                        bg-red-500/20 text-red-400
-                    {% endif %}">
-                    {{ message }}
-                </div>
-            {% endfor %}
-        {% endif %}
-
-        <form method="POST" class="space-y-6">
-            {% csrf_token %}
-
-            <div>
-                <label class="block text-white/70 mb-2">Old Password</label>
-                <input type="password" name="old_password" required
-                       class="w-full px-5 py-3 rounded-2xl glass-soft focus:ring-2 focus:ring-indigo-500">
-            </div>
-
-            <div>
-                <label class="block text-white/70 mb-2">New Password</label>
-                <input type="password" name="new_password" required
-                       class="w-full px-5 py-3 rounded-2xl glass-soft focus:ring-2 focus:ring-indigo-500">
-            </div>
-
-            <div>
-                <label class="block text-white/70 mb-2">Confirm New Password</label>
-                <input type="password" name="confirm_password" required
-                       class="w-full px-5 py-3 rounded-2xl glass-soft focus:ring-2 focus:ring-indigo-500">
-            </div>
-
-            <button type="submit"
-                    class="px-6 py-3 bg-white text-indigo-700 font-semibold rounded-2xl hover:scale-105 transition">
-                Update Password
-            </button>
-
-        </form>
+        <a href="{% url 'logout' %}"
+           class="px-6 py-3 bg-red-600 rounded-xl hover:bg-red-700">
+            Logout
+        </a>
 
     </div>
 

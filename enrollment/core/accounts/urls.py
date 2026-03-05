@@ -52,6 +52,8 @@ from .views import (
     audit_log_detail,
     export_audit_logs,
     student_enrollment_instructions,
+    enrollment_pipeline,
+    signup_view,
 )
 
 urlpatterns = [
@@ -64,6 +66,7 @@ urlpatterns = [
 
     #  WEB ROUTES 
     path("login/", login_view, name="login"),
+    path("signup/", signup_view, name="signup"),
     path("logout/", LogoutView.as_view(next_page="login"), name="logout"),
 
     #  DASHBOARDS 
@@ -107,10 +110,10 @@ urlpatterns = [
     path("student/attendance/", student_attendance, name="student_attendance"),
     path("student/timetable/", student_timetable, name="student_timetable"),
     path("student/mark-attendance/", student_mark_attendance, name="student_mark_attendance"),
-    path("student/contact/", student_contact_admin, name="student_contact_admin"),
+    path("student/contact/", student_contact, name="student_contact"),
     path("student/classes/", student_classes, name="student_classes"),
-    path("student/enroll/", student_enrollment_instructions, name="enrollment_instructions"),
-
+    path("student/enroll/", student_enrollment_instructions, name="student_enrollment_instructions"),
+    path("student/enrollment-pipeline/",enrollment_pipeline,name="enrollment_pipeline"),
     # LECTURER
     path("lecturer/profile/", lecturer_profile, name="lecturer_profile"),
     path("lecturer/classes/", lecturer_classes, name="lecturer_classes"),

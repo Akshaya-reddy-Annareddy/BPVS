@@ -54,12 +54,16 @@
         <a href="{% url 'student_attendance' %}"
            class="block hover:text-indigo-400">View Attendance</a>
 
-        <a href="{% url 'student_mark' %}"
+        <a href="{% url 'attendance_pipeline' %}"
            class="block hover:text-indigo-400">Mark Attendance</a>
 
-        <a href="{% url 'student_contact_admin' %}"
+        <a href="{% url 'student_contact' %}"
            class="block hover:text-indigo-400">Contact Admin</a>
 
+        <a href="{% url 'logout' %}" 
+            class="block mt-10 text-red-400 hover:text-red-500">
+            Logout
+        </a>  
     </nav>
 </div>
 

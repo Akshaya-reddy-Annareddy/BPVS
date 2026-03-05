@@ -26,6 +26,9 @@ class AttendanceRecord(models.Model):
     attendance_date = models.DateField(default=timezone.localdate)
     timestamp = models.DateTimeField(default=timezone.now)
 
+    face_enrolled = models.BooleanField(default=False)
+    allow_reenroll = models.BooleanField(default=False)
+
     status = models.CharField(
         max_length=10,
         choices=[
