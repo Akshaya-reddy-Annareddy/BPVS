@@ -109,7 +109,7 @@ urlpatterns = [
     path("student/mark-attendance/", student_mark_attendance, name="student_mark_attendance"),
     path("student/contact/", student_contact_admin, name="student_contact_admin"),
     path("student/classes/", student_classes, name="student_classes"),
-    path("student/enrollment/", student_enrollment_instructions, name="enrollment_instructions"),
+    path("student/enroll/", student_enrollment_instructions, name="enrollment_instructions"),
 
     # LECTURER
     path("lecturer/profile/", lecturer_profile, name="lecturer_profile"),

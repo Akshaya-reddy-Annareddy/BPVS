@@ -283,6 +283,8 @@ def admin_dashboard(request):
 def student_dashboard(request):
     if request.user.role != "student":
         return redirect("login")
+    if not request.user.face_enrolled:
+        return redirect("student_enroll")
     return render(request, "student/dashboard.html")
 
 
@@ -597,6 +599,8 @@ def student_timetable(request):
 def student_contact(request):
     return render(request, "student/contact.html")
 
+def student_enrollment_instructions(request):
+    return render(request, "student/enrollment_instructions.html")
 
 # LECTURER 
 
@@ -615,3 +619,19 @@ def lecturer_timetable(request):
 @login_required
 def lecturer_contact(request):
     return render(request, "lecturer/contact.html")
+
+@csrf_exempt
+def mark_face_enrolled(request):
+
+    data = json.loads(request.body)
+    admission_id = data.get("admission_id")
+
+    try:
+        user = User.objects.get(admission_id=admission_id)
+        user.face_enrolled = True
+        user.save()
+
+        return JsonResponse({"status": "ok"})
+
+    except User.DoesNotExist:
+        return JsonResponse({"error": "User not found"})

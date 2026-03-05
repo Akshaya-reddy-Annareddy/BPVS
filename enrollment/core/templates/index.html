@@ -186,6 +186,7 @@ async function checkStatus(jobId) {
             clearInterval(interval);
             document.getElementById("status").innerText = "Face enrolled successfully";
             alert("Face enrolled successfully");
+            window.location.href = "http://127.0.0.1:8000/student/dashboard/";
             isProcessing = false;
         }
 

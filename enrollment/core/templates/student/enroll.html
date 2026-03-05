@@ -1,0 +1,89 @@
+{% extends "student/base.html" %}
+
+{% block content %}
+<main class="max-w-4xl mx-auto py-10 px-6 text-white">
+
+<div class="bg-slate-900 p-10 rounded-2xl shadow-xl">
+
+<h2 class="text-3xl font-bold mb-6">
+Face Enrollment Required
+</h2>
+
+<p class="text-gray-300 mb-6">
+To use AI Attendance, we need to securely register your facial embedding.
+This allows the system to recognize you during attendance marking.
+</p>
+
+<p class="text-gray-400 mb-6">
+Your face data is encrypted and stored securely following
+biometric data protection standards.
+</p>
+
+<label class="flex items-center gap-2 mb-6">
+<input type="checkbox" id="agree1">
+<span>I read all the information</span>
+</label>
+
+<button onclick="nextStep()"
+class="bg-indigo-600 px-6 py-3 rounded-lg">
+Continue
+</button>
+
+</div>
+
+<div id="step2" class="bg-slate-900 p-10 rounded-2xl shadow-xl mt-10 hidden">
+
+<h3 class="text-2xl font-bold mb-4">
+Enrollment Instructions
+</h3>
+
+<ul class="list-disc ml-6 text-gray-300 space-y-2">
+
+<li>Ensure good lighting</li>
+<li>Remove glasses and masks</li>
+<li>Keep your face centered</li>
+<li>Tie long hair back</li>
+<li>Follow head movement instructions</li>
+
+</ul>
+
+<label class="flex items-center gap-2 mt-6 mb-6">
+<input type="checkbox" id="agree2">
+<span>I read all instructions</span>
+</label>
+
+<button onclick="startEnrollment()"
+class="bg-green-600 px-6 py-3 rounded-lg">
+Start Enrollment
+</button>
+
+</div>
+
+</main>
+
+<script>
+
+function nextStep(){
+if(!document.getElementById("agree1").checked){
+alert("Please read the information");
+return;
+}
+
+document.getElementById("step2").classList.remove("hidden");
+}
+
+function startEnrollment(){
+
+if(!document.getElementById("agree2").checked){
+alert("Please confirm instructions");
+return;
+}
+
+window.location.href =
+"https://fictional-space-adventure-975www67xxr427vv5-8001.app.github.dev";
+
+}
+
+</script>
+
+{% endblock %}

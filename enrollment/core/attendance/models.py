@@ -73,23 +73,3 @@ class AttendanceSession(models.Model):
     def __str__(self):
         return f"{self.timetable} - {self.date}"
 
-class Complaint(models.Model):
-    student = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
-        limit_choices_to={'role': 'student'}
-    )
-    subject = models.CharField(max_length=200)
-    message = models.TextField()
-    status = models.CharField(
-        max_length=20,
-        choices=[
-            ("pending", "Pending"),
-            ("resolved", "Resolved"),
-        ],
-        default="pending"
-    )
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f"{self.student.username} - {self.subject}"

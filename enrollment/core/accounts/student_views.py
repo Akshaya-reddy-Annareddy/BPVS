@@ -5,7 +5,8 @@ from django.db.models import Count
 from django.http import JsonResponse
 
 from academics.models import Timetable, Subject
-from attendance.models import AttendanceRecord, AttendanceSession, Complaint
+from attendance.models import AttendanceRecord, AttendanceSession
+from accounts.models import Complaint
 from .models import User
 import requests
 from django.views.decorators.csrf import csrf_exempt
