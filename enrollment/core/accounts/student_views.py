@@ -34,6 +34,9 @@ def student_dashboard(request):
     if user.role != "student":
         return redirect("login")
 
+    if not request.user.face_enrolled:
+        return redirect("enrollment_instructions")
+    
     today = timezone.localdate()
     current_day = today.strftime("%A")
 
@@ -191,3 +194,36 @@ def student_contact_admin(request):
     context = {}
     context.update(get_student_context(user))
     return render(request, "student/contact.html", context)
+
+@login_required
+def student_classes(request):
+    user = request.user
+
+    if user.role != "student":
+        return redirect("login")
+
+    today = timezone.localdate()
+    current_day = today.strftime("%A")
+
+    todays_classes = Timetable.objects.filter(
+        course=user.course,
+        year=user.year,
+        day=current_day
+    )
+
+    context = {
+        "todays_classes": todays_classes,
+    }
+
+    context.update(get_student_context(user))
+
+    return render(request, "student/classes.html", context)
+
+@login_required
+def student_enrollment_instructions(request):
+    if request.user.face_enrolled:
+        return redirect("student_dashboard")
+
+    context = {}
+    context.update(get_student_context(request.user))
+    return render(request, "student/enrollment_instructions.html", context)

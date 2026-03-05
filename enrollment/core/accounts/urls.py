@@ -51,6 +51,7 @@ from .views import (
     admin_delete_lecturer,
     audit_log_detail,
     export_audit_logs,
+    student_enrollment_instructions,
 )
 
 urlpatterns = [
@@ -107,6 +108,8 @@ urlpatterns = [
     path("student/timetable/", student_timetable, name="student_timetable"),
     path("student/mark-attendance/", student_mark_attendance, name="student_mark_attendance"),
     path("student/contact/", student_contact_admin, name="student_contact_admin"),
+    path("student/classes/", student_classes, name="student_classes"),
+    path("student/enrollment/", student_enrollment_instructions, name="enrollment_instructions"),
 
     # LECTURER
     path("lecturer/profile/", lecturer_profile, name="lecturer_profile"),
