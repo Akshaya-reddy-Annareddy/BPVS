@@ -51,7 +51,7 @@ from .views import (
     admin_delete_lecturer,
     audit_log_detail,
     export_audit_logs,
-    student_enrollment_instructions,
+    enrollment_instructions,
     enrollment_pipeline,
     signup_view,
 )
