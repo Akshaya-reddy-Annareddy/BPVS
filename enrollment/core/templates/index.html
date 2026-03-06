@@ -191,6 +191,7 @@ async function checkStatus(jobId) {
                 headers: {
                     "X-CSRFToken": getCookie("csrftoken"),
                 },
+                credentials: "include"
             })
             .then(response => response.json())
             .then(data => {

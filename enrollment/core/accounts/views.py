@@ -197,16 +197,15 @@ def mark_face_enrolled(request):
         return JsonResponse({"error": "POST required"}, status=400)
 
     try:
+        user = request.user
+
+        if user.role != "student":
+            return JsonResponse({"error": "Invalid user"}, status=403)
+        
+        admission_id = user.admission_id
+
         data = json.loads(request.body)
         admission_id = data.get("admission_id")
-
-        if not admission_id:
-            return JsonResponse({"error": "Admission ID required"}, status=400)
-
-        user = User.objects.filter(admission_id=admission_id, role="student").first()
-
-        if not user:
-            return JsonResponse({"error": "Student not found"}, status=404)
 
         # Delete previous embeddings if re-enrolling
         if user.allow_reenroll:
@@ -649,7 +648,7 @@ def enrollment_instructions(request):
     if user.role == "student" and user.allow_reenroll:
 
         # Delete old face embedding from Qdrant
-        delete_embedding_by_admission(user.admission_id)
+        delete_embedding_by_admission(request.user.admission_id)
 
         # Reset enrollment state
         user.face_enrolled = False
