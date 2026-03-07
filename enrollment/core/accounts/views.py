@@ -4,13 +4,11 @@ from django.contrib.auth import get_user_model, authenticate
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 import json
-from .models import User
 from django.contrib.auth import login
 from django.shortcuts import redirect
 from django.contrib.auth.decorators import login_required
 import re
 from academics.models import Course, Subject, Timetable, AuditLog
-from accounts.models import User
 from attendance.models import AttendanceRecord
 from django.utils import timezone
 from .decorators import admin_required
@@ -27,6 +25,7 @@ from datetime import timedelta
 from attendance.models import AttendanceSession
 from datetime import date
 from backend.services.vector_service import delete_embedding_by_admission
+import requests
 
 User = get_user_model()
 
@@ -109,7 +108,8 @@ def signup(request):
                 lecturer_id=lecturer_id,
                 first_name=name,
             )
-            return redirect("lecturer/dashboard")
+            messages.success(request, "Lecturer registered suscessfully")
+            return redirect("lecturer_dashboard")
 
         else:  # admin
 
@@ -208,7 +208,7 @@ def mark_face_enrolled(request):
         admission_id = data.get("admission_id")
 
         # Delete previous embeddings if re-enrolling
-        if user.allow_reenroll:
+        if user.role == "student" and user.allow_reenroll:
             delete_embedding_by_admission(admission_id)
 
         # Update flags
@@ -294,11 +294,50 @@ def admin_dashboard(request):
 
 @login_required
 def student_dashboard(request):
+
     if request.user.role != "student":
         return redirect("login")
-    if not request.user.face_enrolled:
-        return redirect("enrollment_instructions")
-    return render(request, "student/dashboard.html")
+
+    user = request.user
+    today = date.today()
+
+    # Total subjects
+    total_subjects = Subject.objects.filter(course=user.course).count()
+
+    # Total attendance
+    total_attendance = AttendanceRecord.objects.filter(student=user).count()
+
+    # Today's classes
+    classes = Timetable.objects.filter(
+        course=user.course,
+        year=user.year,
+        day=today.strftime("%A")
+    )
+
+    class_list = []
+    active_session = False
+
+    for cls in classes:
+
+        active = AttendanceSession.objects.filter(
+            timetable=cls,
+            date=today,
+            is_active=True
+        ).exists()
+
+        if active:
+            active_session = True
+
+        cls.session_active = active
+        class_list.append(cls)
+
+    return render(request, "student/dashboard.html", {
+        "total_subjects": total_subjects,
+        "total_attendance": total_attendance,
+        "face_enrolled": user.face_enrolled,
+        "todays_classes": class_list,
+        "active_session": active_session
+    })
 
 
 @login_required
@@ -598,7 +637,30 @@ def student_profile(request):
 
 @login_required
 def student_attendance(request):
-    return render(request, "student/attendance.html")
+
+    user = request.user
+
+    attendance_records = AttendanceRecord.objects.filter(
+        student=user
+    ).order_by("_attendance_date")
+
+    total_classes = attendance_records.count()
+
+    present_count = attendance_records.filter(status="P").count()
+
+    attendance_percentage = 0
+
+    if total_classes > 0:
+        attendance_percentage = round((present_count / total_classes) * 100, 2)
+
+    context = {
+        "attendance_records": attendance_records,
+        "total_classes": total_classes,
+        "present_count": present_count,
+        "attendance_percentage": attendance_percentage
+    }
+
+    return render(request, "student/view_attendance.html", context)
 
 @login_required
 def student_classes(request):
@@ -677,8 +739,41 @@ def lecturer_timetable(request):
 
 @login_required
 def lecturer_contact(request):
-    return render(request, "lecturer/contact.html")
+    return render(request, "lecturer/contact_admin.html")
 
+def signup_view(request):
+
+    if request.method == "POST":
+
+        name = request.POST.get("name")
+        admission_id = request.POST.get("admission_id")
+        password = request.POST.get("password")
+        dob = request.POST.get("dob")
+
+        if not admission_id or not password:
+            messages.error(request, "Admission ID and Password required")
+            return redirect("signup")
+
+        admission_id = admission_id.upper()
+
+        user = User.objects.create_user(
+            username=admission_id,
+            password=password,
+            role="student",
+            admission_id=admission_id,
+            first_name=name,
+            dob=dob
+        )
+
+        login(request, user)
+
+        messages.success(request, "Registered successfully")
+
+        return redirect("enrollment_page")
+
+    return redirect("/auth/")
+
+"""
 def signup_view(request):
 
     if request.method == "POST":
@@ -695,3 +790,13 @@ def signup_view(request):
         return redirect("enrollment_page")
 
     return redirect("/auth/")
+"""
+    
+def delete_face_embedding(admission_id):
+
+    response = requests.post(
+        "http://localhost:8001/delete-embedding",
+        json={"admission_id": admission_id}
+    )
+
+    return response.json()

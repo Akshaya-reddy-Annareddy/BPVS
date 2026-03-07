@@ -1,7 +1,7 @@
 from qdrant_client import QdrantClient
 from qdrant_client.models import VectorParams, Distance
 from qdrant_client.models import PointStruct
-from services.encryption_service import encrypt_embedding
+from .encryption_service import encrypt_embedding
 import uuid
 import os
 
@@ -12,7 +12,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 QDRANT_PATH = os.path.join(BASE_DIR, "qdrant_storage")
 
 # Local persistent storage (NO DOCKER)
-client = QdrantClient(path=QDRANT_PATH)
+client = QdrantClient(url="http://localhost:6333")
 
 COLLECTION_NAME = "faces"
 

@@ -109,14 +109,17 @@ urlpatterns = [
     path("student/profile/", student_profile, name="student_profile"),
     path("student/attendance/", student_attendance, name="student_attendance"),
     path("student/timetable/", student_timetable, name="student_timetable"),
-    path("student/mark-attendance/", student_mark_attendance, name="student_mark_attendance"),
+    
+    # path("student/mark-attendance/", student_mark_attendance, name="student_mark_attendance"),
+    
     path("student/contact/", student_contact, name="student_contact"),
     path("student/classes/", student_classes, name="student_classes"),
-    path("student/enroll/", student_enrollment_instructions, name="student_enrollment_instructions"),
-    path("student/enrollment-pipeline/",enrollment_pipeline,name="enrollment_pipeline"),
+    path("student/enrollment/", enrollment_instructions, name="student_enrollment_instructions"),
+    path("student/pipeline/",enrollment_pipeline,name="enrollment_pipeline"),
+    
     # LECTURER
-    path("lecturer/profile/", lecturer_profile, name="lecturer_profile"),
+    path("lecturer/dashboard/", lecturer_dashboard, name="lecturer_dashboard"),
     path("lecturer/classes/", lecturer_classes, name="lecturer_classes"),
-    path("lecturer/timetable/", lecturer_timetable, name="lecturer_timetable"),
-    path("lecturer/contact/", lecturer_contact, name="lecturer_contact"),
+    path("lecturer/profile/", lecturer_profile, name="lecturer_profile"),
+    path("lecturer/contact-admin/", lecturer_contact, name="lecturer_contact_admin"),
 ]

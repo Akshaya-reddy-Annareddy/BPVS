@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 from services.embedding_service import get_embedding
-from services.vector_service import client, COLLECTION_NAME
+from .vector_service import client, COLLECTION_NAME
 
 SIMILARITY_THRESHOLD = 0.6
 

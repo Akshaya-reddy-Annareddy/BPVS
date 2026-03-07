@@ -1,11 +1,45 @@
-{% extends "base.html" %}
-
-{% block page_title %}Profile page{% endblock %}
+{% extends "lecturer/base.html" %}
 
 {% block content %}
-<div class="bg-white rounded-2xl shadow-xl p-6">
-    <h2 class="text-2xl font-bold text-indigo-600">
-        Profile page
-    </h2>
+
+<h2 class="mb-4">Profile</h2>
+
+<div class="card p-4 col-md-6">
+
+<p><b>Name :</b> {{request.user.first_name}}</p>
+
+<p><b>Lecturer ID :</b> {{request.user.lecturer_id}}</p>
+
+<p><b>Email :</b> {{request.user.email}}</p>
+
+<hr>
+
+<h5>Change Password</h5>
+
+<form method="POST">
+
+{% csrf_token %}
+
+<div class="mb-3">
+
+<label>Old Password</label>
+
+<input type="password" name="old_password" class="form-control" required>
+
 </div>
+
+<div class="mb-3">
+
+<label>New Password</label>
+
+<input type="password" name="new_password" class="form-control" required>
+
+</div>
+
+<button class="btn neon-btn">Update Password</button>
+
+</form>
+
+</div>
+
 {% endblock %}

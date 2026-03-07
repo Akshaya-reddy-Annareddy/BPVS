@@ -1,11 +1,99 @@
-{% extends "base.html" %}
-
-{% block page_title %}View Attendance{% endblock %}
+{% extends "student/base.html" %}
 
 {% block content %}
-<div class="bg-white rounded-2xl shadow-xl p-6">
-    <h2 class="text-2xl font-bold text-indigo-600">
-        View Attendance
-    </h2>
+
+<div class="max-w-5xl mx-auto space-y-10">
+
+    <div class="glass p-8 rounded-2xl">
+
+        <h2 class="text-2xl font-bold text-indigo-400 mb-6">
+            Attendance Overview
+        </h2>
+
+        <div class="grid md:grid-cols-3 gap-6 text-center">
+
+            <div class="bg-white/5 p-6 rounded-xl">
+                <p class="text-sm text-white/60">Total Classes</p>
+                <p class="text-3xl font-bold">{{ total_classes }}</p>
+            </div>
+
+            <div class="bg-white/5 p-6 rounded-xl">
+                <p class="text-sm text-white/60">Present</p>
+                <p class="text-3xl font-bold text-green-400">{{ present_count }}</p>
+            </div>
+
+            <div class="bg-white/5 p-6 rounded-xl">
+                <p class="text-sm text-white/60">Attendance %</p>
+                <p class="text-3xl font-bold text-yellow-400">
+                    {{ attendance_percentage }}%
+                </p>
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <div class="glass p-8 rounded-2xl">
+
+        <h2 class="text-xl font-bold mb-6 text-indigo-400">
+            Attendance History
+        </h2>
+
+        <table class="w-full text-left">
+
+            <thead class="border-b border-white/10 text-white/60 text-sm">
+                <tr>
+                    <th class="py-3">Date</th>
+                    <th>Subject</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+
+            <tbody class="text-sm">
+
+                {% for record in attendance_records %}
+                <tr class="border-b border-white/10">
+
+                    <td class="py-3">
+                        {{ record.date }}
+                    </td>
+
+                    <td>
+                        {{ record.subject }}
+                    </td>
+
+                    <td>
+
+                        {% if record.status == "P" %}
+                        <span class="px-3 py-1 bg-green-500/20 text-green-400 rounded-full text-xs">
+                            Present
+                        </span>
+                        {% else %}
+                        <span class="px-3 py-1 bg-red-500/20 text-red-400 rounded-full text-xs">
+                            Absent
+                        </span>
+                        {% endif %}
+
+                    </td>
+
+                </tr>
+                {% empty %}
+
+                <tr>
+                    <td colspan="3" class="py-6 text-center text-white/40">
+                        No attendance records yet
+                    </td>
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
 </div>
+
 {% endblock %}

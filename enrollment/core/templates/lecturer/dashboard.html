@@ -1,14 +1,47 @@
-{% extends "base.html" %}
-
-{% block page_title %}Lecturer Dashboard{% endblock %}
+{% extends "lecturer/base.html" %}
 
 {% block content %}
-<div class="bg-white rounded-2xl shadow-xl p-6">
-    <h2 class="text-2xl font-bold text-indigo-600 mb-4">
-        Welcome Lecturer 👋
-    </h2>
-    <p class="text-gray-600">
-        Here you will see your classes, and attendance count, Sheet.
-    </p>
+
+<h2 class="mb-4">Welcome {{request.user.first_name}}</h2>
+
+<div class="row g-4">
+
+<div class="col-md-4">
+
+<div class="card p-4 text-center">
+
+<h5>Today's Classes</h5>
+
+<h2>{{ today_classes }}</h2>
+
 </div>
+
+</div>
+
+<div class="col-md-4">
+
+<div class="card p-4 text-center">
+
+<h5>Attendance Taken</h5>
+
+<h2>{{ attendance_taken }}</h2>
+
+</div>
+
+</div>
+
+<div class="col-md-4">
+
+<div class="card p-4 text-center">
+
+<h5>Total Students</h5>
+
+<h2>{{ total_students }}</h2>
+
+</div>
+
+</div>
+
+</div>
+
 {% endblock %}

@@ -26,6 +26,7 @@ class User(AbstractUser):
     # Face enrollment status (VERY IMPORTANT)
     face_enrolled = models.BooleanField(default=False)
     re_enroll_used = models.BooleanField(default=False) #ONE self re-enroll allowed
+    allow_reenroll = models.BooleanField(default=False)
     admin_reenroll_allowed = models.BooleanField(default=False) #Admin override.
 
     course = models.ForeignKey(

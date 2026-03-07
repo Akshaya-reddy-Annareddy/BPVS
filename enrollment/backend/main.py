@@ -18,6 +18,9 @@ from datetime import datetime
 import pytz
 import time
 
+from fastapi import FastAPI
+from services.vector_service import delete_embedding_by_admission
+
 DJANGO_API = "http://127.0.0.1:8000/"
 
 def send_attendance_to_django(admission_id):
@@ -292,3 +295,10 @@ async def verify_face(files: list[UploadFile] = File(...)):
     except Exception as e:
         print("Verification error:", e)
         return {"status": "error", "message": str(e)}
+    
+app = FastAPI()
+
+@app.post("/delete-embedding")
+def delete_embedding(admission_id: str):
+    delete_embedding_by_admission(admission_id)
+    return {"status": "deleted"}

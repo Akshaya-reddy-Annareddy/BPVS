@@ -2,7 +2,7 @@ import cv2
 from services.frame_service import extract_frames
 from services.face_service import get_face
 from services.embedding_service import get_embedding, average_embeddings
-from services.vector_service import store_embedding
+from .vector_service import store_embedding
 from utils.cleanup import delete_file
 import shutil
 import os
