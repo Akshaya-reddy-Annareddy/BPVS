@@ -37,7 +37,6 @@ from .views import (
     lecturer_classes,
     lecturer_contact,
     lecturer_profile,
-    lecturer_timetable,
     admin_add_course,
     admin_add_subject,
     admin_add_lecturer,
@@ -105,7 +104,6 @@ urlpatterns = [
     path("admin/export-audit/", export_audit_logs, name="export_audit_logs"),
 
     # STUDENT
-    path("student/dashboard/", student_dashboard, name="student_dashboard"),
     path("student/profile/", student_profile, name="student_profile"),
     path("student/attendance/", student_attendance, name="student_attendance"),
     path("student/timetable/", student_timetable, name="student_timetable"),
@@ -118,7 +116,6 @@ urlpatterns = [
     path("student/pipeline/",enrollment_pipeline,name="enrollment_pipeline"),
     
     # LECTURER
-    path("lecturer/dashboard/", lecturer_dashboard, name="lecturer_dashboard"),
     path("lecturer/classes/", lecturer_classes, name="lecturer_classes"),
     path("lecturer/profile/", lecturer_profile, name="lecturer_profile"),
     path("lecturer/contact-admin/", lecturer_contact, name="lecturer_contact_admin"),

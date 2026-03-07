@@ -39,7 +39,11 @@ def signup(request):
         return JsonResponse({"error": "POST method required"}, status=400)
 
     try:
-        data = json.loads(request.body)
+        # data = json.loads(request.body)
+        if request.content_type == "application/json":
+            data = json.loads(request.body)
+        else:
+            data = request.POST
 
         role = data.get("role")
         name = data.get("name")
@@ -71,7 +75,7 @@ def signup(request):
         if role == "student":
 
             if not admission_id or not dob:
-                return JsonResponse({"error": "Admission ID and DOB required"}, status=400)
+                return JsonResponse({"error": "Admission ID required"}, status=400)
 
             # AUTO UPPERCASE
             admission_id = admission_id.upper()
@@ -91,6 +95,7 @@ def signup(request):
                 first_name=name,
                 dob=dob,
             )
+            login(request, user)
             return redirect("student_dashboard")
 
         elif role == "lecturer":
@@ -108,7 +113,8 @@ def signup(request):
                 lecturer_id=lecturer_id,
                 first_name=name,
             )
-            messages.success(request, "Lecturer registered suscessfully")
+            login(request, user)
+            messages.success(request, "Lecturer registered successfully")
             return redirect("lecturer_dashboard")
 
         else:  # admin
@@ -642,7 +648,7 @@ def student_attendance(request):
 
     attendance_records = AttendanceRecord.objects.filter(
         student=user
-    ).order_by("_attendance_date")
+    ).order_by("-attendance-date")
 
     total_classes = attendance_records.count()
 
@@ -733,9 +739,12 @@ def lecturer_profile(request):
 def lecturer_classes(request):
     return render(request, "lecturer/classes.html")
 
+"""
 @login_required
 def lecturer_timetable(request):
     return render(request, "lecturer/timetable.html")
+"""
+
 
 @login_required
 def lecturer_contact(request):
@@ -769,7 +778,7 @@ def signup_view(request):
 
         messages.success(request, "Registered successfully")
 
-        return redirect("enrollment_page")
+        return redirect("student_enrollment_instructions")
 
     return redirect("/auth/")
 
