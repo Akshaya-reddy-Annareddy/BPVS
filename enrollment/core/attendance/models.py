@@ -72,6 +72,8 @@ class AttendanceSession(models.Model):
     is_active = models.BooleanField(default=False)
     started_at = models.DateTimeField(null=True, blank=True)
     ended_at = models.DateTimeField(null=True, blank=True)
+    timer_minutes = models.IntegerField(default=5)
+    restart_count = models.IntegerField(default=0)
 
     def __str__(self):
         return f"{self.timetable} - {self.date}"

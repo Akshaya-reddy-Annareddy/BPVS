@@ -1,5 +1,4 @@
-from django.shortcuts import render
-
+from django.shortcuts import render, redirect
 from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
 from .models import AuditLog
@@ -7,6 +6,65 @@ import json
 from django.contrib.auth.decorators import login_required
 from .models import Course
 
+import csv
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from academics.models import Timetable, Course, Subject
+from accounts.models import User
+
+
+def admin_timetable(request):
+
+    if request.method == "POST":
+
+        csv_file = request.FILES["csv_file"]
+
+        decoded = csv_file.read().decode("utf-8").splitlines()
+        reader = csv.DictReader(decoded, delimiter="\t")
+
+        for row in reader:
+
+            if not row["course"]:
+                continue
+
+            try:
+
+                course = Course.objects.get(code=row["course"])
+
+                subject = Subject.objects.get(
+                    name=row["subject"],
+                    course=course
+                )
+
+                lecturer = User.objects.get(
+                    lecturer_id=row["lecturer_id"]
+                )
+
+                Timetable.objects.create(
+                    course=course,
+                    year=subject.year,
+                    subject=subject,
+                    lecturer=lecturer,
+                    day=row["day"],
+                    start_time=row["start_time"],
+                    end_time=row["end_time"],
+                    room_number=row["room_number"]
+                )
+
+            except Exception as e:
+                print("CSV error:", e)
+
+        messages.success(request, "Timetable uploaded successfully")
+
+        return redirect("admin_timetable")
+
+    timetables = Timetable.objects.all()
+
+    return render(
+        request,
+        "admin/timetable.html",
+        {"timetables": timetables}
+    )
 
 @csrf_exempt
 def spoof_log(request):
@@ -77,3 +135,4 @@ def delete_course(request, course_id):
     if request.method == "DELETE":
         Course.objects.get(id=course_id).delete()
         return JsonResponse({"message": "Course deleted"})
+

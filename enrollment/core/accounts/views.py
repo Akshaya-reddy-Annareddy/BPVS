@@ -22,10 +22,13 @@ from django.contrib import messages
 from django.db.models import Count
 from django.utils.timezone import now
 from datetime import timedelta
-from attendance.models import AttendanceSession
+from attendance.models import AttendanceSession, AttendanceRecord
 from datetime import date
 from backend.services.vector_service import delete_embedding_by_admission
 import requests
+
+from datetime import datetime
+from academics.models import Timetable, AuditLog
 
 User = get_user_model()
 
@@ -648,7 +651,7 @@ def student_attendance(request):
 
     attendance_records = AttendanceRecord.objects.filter(
         student=user
-    ).order_by("-attendance-date")
+    ).order_by("-attendance_date")
 
     total_classes = attendance_records.count()
 
@@ -723,7 +726,7 @@ def enrollment_instructions(request):
         user.allow_reenroll = False
         user.save()
 
-    return render(request, "enrollment/instructions.html")
+    return render(request, "student/enrollment_instructions.html")
 
 @login_required
 def enrollment_pipeline(request):
@@ -735,9 +738,21 @@ def enrollment_pipeline(request):
 def lecturer_profile(request):
     return render(request, "lecturer/profile.html")
 
-@login_required
+
 def lecturer_classes(request):
-    return render(request, "lecturer/classes.html")
+
+    today = datetime.today().strftime("%A")
+
+    classes = Timetable.objects.filter(
+        lecturer=request.user,
+        day=today
+    )
+
+    return render(
+        request,
+        "lecturer/classes.html",
+        {"classes": classes}
+    )
 
 """
 @login_required
@@ -750,6 +765,7 @@ def lecturer_timetable(request):
 def lecturer_contact(request):
     return render(request, "lecturer/contact_admin.html")
 
+""""
 def signup_view(request):
 
     if request.method == "POST":
@@ -764,6 +780,11 @@ def signup_view(request):
             return redirect("signup")
 
         admission_id = admission_id.upper()
+
+        # CHECK IF USER EXISTS
+        if User.objects.filter(admission_id=admission_id).exists():
+            messages.error(request, "Admission ID already registered")
+            return redirect("signup")
 
         user = User.objects.create_user(
             username=admission_id,
@@ -783,6 +804,7 @@ def signup_view(request):
     return redirect("/auth/")
 
 """
+"""
 def signup_view(request):
 
     if request.method == "POST":
@@ -800,6 +822,105 @@ def signup_view(request):
 
     return redirect("/auth/")
 """
+
+def signup_view(request):
+
+    if request.method == "POST":
+
+        role = request.POST.get("role")
+        name = request.POST.get("name")
+        password = request.POST.get("password")
+        confirm_password = request.POST.get("confirm_password")
+
+        if not role or not name or not password:
+            messages.error(request, "All fields are required")
+            return redirect("signup")
+
+        if password != confirm_password:
+            messages.error(request, "Passwords do not match")
+            return redirect("signup")
+
+        # STUDENT
+        if role == "student":
+
+            admission_id = request.POST.get("admission_id")
+            dob = request.POST.get("dob")
+
+            if not admission_id:
+                messages.error(request, "Admission ID required")
+                return redirect("signup")
+
+            admission_id = admission_id.upper()
+
+            if User.objects.filter(username=admission_id).exists():
+                messages.error(request, "Student already exists")
+                return redirect("signup")
+
+            user = User.objects.create_user(
+                username=admission_id,
+                password=password,
+                role="student",
+                admission_id=admission_id,
+                first_name=name,
+                dob=dob
+            )
+
+            login(request, user)
+            return redirect("student_enrollment_instructions")
+
+        # LECTURER
+        elif role == "lecturer":
+
+            lecturer_id = request.POST.get("lecturer_id")
+
+            if not lecturer_id:
+                messages.error(request, "Lecturer ID required")
+                return redirect("signup")
+
+            if User.objects.filter(username=lecturer_id).exists():
+                messages.error(request, "Lecturer already exists")
+                return redirect("signup")
+
+            user = User.objects.create_user(
+                username=lecturer_id,
+                password=password,
+                role="lecturer",
+                lecturer_id=lecturer_id,
+                first_name=name
+            )
+
+            login(request, user)
+
+            messages.success(request, "Lecturer registered successfully")
+
+            return redirect("lecturer_dashboard")
+
+        # ADMIN
+        elif role == "admin":
+
+            admin_id = request.POST.get("admin_id")
+
+            if not admin_id:
+                messages.error(request, "Admin ID required")
+                return redirect("signup")
+
+            if User.objects.filter(username=admin_id).exists():
+                messages.error(request, "Admin already exists")
+                return redirect("signup")
+
+            user = User.objects.create_user(
+                username=admin_id,
+                password=password,
+                role="admin",
+                admin_id=admin_id,
+                first_name=name
+            )
+
+            login(request, user)
+
+            return redirect("admin_dashboard")
+
+    return render(request, "accounts/signup.html")
     
 def delete_face_embedding(admission_id):
 
@@ -809,3 +930,141 @@ def delete_face_embedding(admission_id):
     )
 
     return response.json()
+
+
+def start_attendance(request, timetable_id):
+
+    timetable = Timetable.objects.get(id=timetable_id)
+
+    timer = int(request.POST.get("timer"))
+    if timer < 3 or timer > 20:
+        timer = 5
+
+    session, created = AttendanceSession.objects.get_or_create(
+        timetable=timetable,
+        date=timezone.localdate(),
+        defaults={
+            "is_active": True,
+            "started_at": timezone.now()
+        }
+    )
+    
+    session.is_active = True
+    session.timer_minutes = timer
+    session.started_at = timezone.now()
+    session.ended_at = timezone.now() + timezone.timedelta(minutes=timer)
+
+    session.save()
+
+    return redirect("lecturer_classes")
+
+def student_classes(request):
+
+    today = datetime.today().strftime("%A")
+
+    classes = Timetable.objects.filter(
+        course=request.user.course,
+        year=request.user.year,
+        day=today
+    )
+
+    data = []
+
+    for c in classes:
+
+        active = AttendanceSession.objects.filter(
+            timetable=c,
+            date=timezone.localdate(),
+            is_active=True
+        ).exists()
+
+        data.append({
+            "subject": c.subject,
+            "start_time": c.start_time,
+            "end_time": c.end_time,
+            "lecturer": c.lecturer,
+            "active_session": active
+        })
+
+    return render(
+        request,
+        "student/classes.html",
+        {"todays_classes": data}
+    )
+
+
+def restart_attendance(request, timetable_id):
+
+    timetable = Timetable.objects.get(id=timetable_id)
+
+    session = AttendanceSession.objects.get(
+        timetable=timetable,
+        date=timezone.localdate()
+    )
+
+    session.restart_count += 1
+    session.started_at = timezone.now()
+    session.ended_at = timezone.now() + timezone.timedelta(minutes=session.timer_minutes)
+    session.save()
+
+    # delete previous attendance
+    AttendanceRecord.objects.filter(
+        subject=timetable.subject,
+        course=timetable.course,
+        attendance_date=timezone.localdate()
+    ).delete()
+
+    # create audit log
+    AuditLog.objects.create(
+        admission_id="SYSTEM",
+        reason=f"Attendance restarted by lecturer {request.user.username}",
+        timestamp=timezone.now(),
+        course=timetable.course.code,
+        class_name=timetable.subject.name
+    )
+
+    return redirect("lecturer_classes")
+
+def mark_attendance(request):
+
+    student = request.user
+
+    timetable_id = request.GET.get("timetable")
+
+    timetable = Timetable.objects.get(id=timetable_id)
+
+    session = AttendanceSession.objects.filter(
+        timetable = timetable,
+        date = timezone.localdate(),
+        is_active=True
+    ).first()
+
+    if not session:
+        return redirect("student_classes")
+    
+    if timezone.now() > session.ended_at:
+
+        session.is_active = False
+        session.save()
+
+        return redirect("student_classes")
+    
+    AttendanceRecord.objects.update_or_create(
+        student=student,
+        subject=timetable.subject,
+        attendance_data=timezone.localdate(),
+        defaults={
+            "lecturer": timetable.lecturer,
+            "course": timetable.course
+        }
+    )
+
+    AuditLog.objects.create(
+        admission_id=student.admission_id,
+        reason="Student tried marking attendance after session expired",
+        timestamp=timezone.now(),
+        course=student.course.code,
+        class_name=timetable.subject.name
+    )
+
+    return redirect("student_dashboard")
