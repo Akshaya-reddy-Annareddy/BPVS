@@ -53,7 +53,8 @@ from .views import (
     enrollment_instructions,
     enrollment_pipeline,
     signup_view,
-    start_attendance
+    start_attendance,
+    restart_attendance
 )
 
 urlpatterns = [
@@ -121,4 +122,5 @@ urlpatterns = [
     path("lecturer/profile/", lecturer_profile, name="lecturer_profile"),
     path("lecturer/contact-admin/", lecturer_contact, name="lecturer_contact"),
     path("lecturer/start-attendance/<int:timetable_id>/",start_attendance,name="start_attendance"),
+    path("lecturer/restart-attendance/<int:timetable_id>/",restart_attendance,name="restart_attendance"),
 ]

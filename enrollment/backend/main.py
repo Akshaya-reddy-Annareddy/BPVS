@@ -23,12 +23,13 @@ from services.vector_service import delete_embedding_by_admission
 
 DJANGO_API = "http://127.0.0.1:8000/"
 
-def send_attendance_to_django(admission_id):
+def send_attendance_to_django(admission_id, timetable_id):
     try:
         response = requests.post(
             f"{DJANGO_API}/attendance/mark/",
             json={
-                "admission_id": admission_id
+                "admission_id": admission_id,
+                "timetable": timetable_id
             },
             timeout=3 #reduce timeout for speed
         )
@@ -79,7 +80,7 @@ def process_video_background(video_path, admission_id, job_id, overwrite=False):
             # NEW: Notify Django that face is enrolled
             try:
                 requests.post(
-                    f"{DJANGO_API}/accounts/mark-face-enrolled/",
+                    f"{DJANGO_API}/accounts/api/mark-face-enrolled/",
                     json={"admission_id": admission_id},
                     timeout=5
                 )
@@ -134,7 +135,7 @@ async def upload_video(
     # STEP 1: Check enrollment status from Django
     try:
         user_check = requests.get(
-            f"{DJANGO_API}accounts/check-enrollment/{admission_id}/",
+            f"{DJANGO_API}accounts/api/check-enrollment/{admission_id}/",
             timeout=5
         )
         user_data = user_check.json()
@@ -180,7 +181,7 @@ def get_status(job_id: str):
     return {"status": status}
 
 @app.post("/verify-face/")
-async def verify_face(files: list[UploadFile] = File(...)):
+async def verify_face(files: list[UploadFile] = File(...),timetable_id: str = Form(...)):
     try:
         frames = []
         best_frame = None
@@ -274,10 +275,10 @@ async def verify_face(files: list[UploadFile] = File(...)):
         ist = pytz.timezone("Asia/Kolkata")
         today = datetime.now(ist).date()
 
-        cache_key = f"{admission_id}_{today}"
+        cache_key = f"{admission_id}_{timetable_id}_{today}"
 
         if cache_key not in attendance_cache:
-            send_attendance_to_django(admission_id)
+            send_attendance_to_django(admission_id, timetable_id)
             attendance_cache[cache_key] = True
         else:
             return {
@@ -295,8 +296,6 @@ async def verify_face(files: list[UploadFile] = File(...)):
     except Exception as e:
         print("Verification error:", e)
         return {"status": "error", "message": str(e)}
-    
-app = FastAPI()
 
 @app.post("/delete-embedding")
 def delete_embedding(admission_id: str):

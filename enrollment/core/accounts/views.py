@@ -213,8 +213,8 @@ def mark_face_enrolled(request):
         
         admission_id = user.admission_id
 
-        data = json.loads(request.body)
-        admission_id = data.get("admission_id")
+        # data = json.loads(request.body)
+        # admission_id = data.get("admission_id")
 
         # Delete previous embeddings if re-enrolling
         if user.role == "student" and user.allow_reenroll:
@@ -401,14 +401,30 @@ def admin_timetable(request):
     if request.method == "POST" and request.FILES.get("csv_file"):
         csv_file = request.FILES["csv_file"]
         file_data = TextIOWrapper(csv_file.file, encoding="utf-8")
-        reader = csv.DictReader(file_data)
+        reader = csv.DictReader(file_data, delimiter="\t")
 
         for row in reader:
             # Safe get or create
-            course, _ = Course.objects.get_or_create(name=row["course"])
+            course_code = row["course"].strip()
+            course, _ = Course.objects.get_or_create(
+                code=course_code,
+                defaults={
+                    "name": course_code,
+                    "duration_years": 4
+                }
+            )
+            subject_name = row["subject"].strip()
+
+            # Generate subject code (ML, AI, CN, etc.)
+            code = "".join(word[0] for word in subject_name.split()).upper()
+
             subject, _ = Subject.objects.get_or_create(
-                name=row["subject"],
-                course=course
+                code=code,
+                defaults={
+                    "name": subject_name,
+                    "course": course,
+                    "year": 1
+                }
             )
             lecturer = User.objects.filter(
                 lecturer_id=row["lecturer_id"],
@@ -419,14 +435,14 @@ def admin_timetable(request):
                 messages.error(request, f"Lecturer {row['lecturer_id']} not found")
                 continue
 
-            Timetable.objects.create(
+            Timetable.objects.get_or_create(
                 course=course,
+                year=subject.year,
                 subject=subject,
                 lecturer=lecturer,
                 day=row["day"],
                 start_time=row["start_time"],
-                end_time=row["end_time"],
-                room_number=row["room_number"]
+                end_time=row["end_time"]
             )
 
         messages.success(request, "Timetable uploaded successfully")
@@ -522,33 +538,43 @@ def admin_add_course(request):
 
 
 @admin_required
-@require_POST
 def admin_add_subject(request):
-    name = request.POST.get("name")
-    course_id = request.POST.get("course_id")
 
-    if name and course_id:
-        course = Course.objects.get(id=course_id)
-        Subject.objects.create(name=name, course=course)
+    if request.method == "POST":
+
+        name = request.POST.get("name")
+        course_id = request.POST.get("course_id")
+
+        if name and course_id:
+            course = Course.objects.get(id=course_id)
+
+            Subject.objects.create(
+                name=name,
+                course=course,
+                year=1
+            )
 
     return redirect("admin_subjects")
 
 
 @admin_required
-@require_POST
 def admin_add_lecturer(request):
-    lecturer_id = request.POST.get("lecturer_id")
-    name = request.POST.get("name")
-    password = request.POST.get("password")
 
-    if lecturer_id and password:
-        User.objects.create_user(
-            username=lecturer_id,
-            password=password,
-            role="lecturer",
-            lecturer_id=lecturer_id,
-            first_name=name
-        )
+    if request.method == "POST":
+
+        lecturer_id = request.POST.get("lecturer_id")
+        name = request.POST.get("name")
+        password = request.POST.get("password")
+
+        if lecturer_id and password:
+
+            User.objects.create_user(
+                username=lecturer_id,
+                password=password,
+                role="lecturer",
+                lecturer_id=lecturer_id,
+                first_name=name
+            )
 
     return redirect("admin_lecturers")
 
@@ -741,7 +767,7 @@ def lecturer_profile(request):
 
 def lecturer_classes(request):
 
-    today = datetime.today().strftime("%A")
+    today = timezone.localtime().strftime("%A")
 
     classes = Timetable.objects.filter(
         lecturer=request.user,

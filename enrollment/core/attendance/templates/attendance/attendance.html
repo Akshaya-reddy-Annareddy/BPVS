@@ -23,6 +23,8 @@ let isProcessing = false;
 let retryCount = 0;
 const MAX_RETRY = 3;
 
+const timetableId = "{{ timetable.id }}";  // provided by Django template
+
 async function startCamera() {
     try {
         stream = await navigator.mediaDevices.getUserMedia({ video: true });

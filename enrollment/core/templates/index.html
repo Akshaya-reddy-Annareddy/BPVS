@@ -145,7 +145,7 @@ async function uploadVideo() {
             type: "video/webm"
         });
 
-        const admissionId = localStorage.getItem("admission_id");
+        const admissionId = "{{request.user.admission_id}}";
         
         if (!admissionId){
             alert("Please login first");
@@ -166,7 +166,11 @@ async function uploadVideo() {
         const result = await response.json();
         console.log("UPLOAD RESPONSE:", result);
         document.getElementById("status").innerText = result.message;
-        checkStatus(result.job_id);
+        if (result.job_id) {
+            checkStatus(result.job_id);
+        } else {
+            console.error("No job_id received");
+        }
 
     } catch (error) {
         console.error(error);

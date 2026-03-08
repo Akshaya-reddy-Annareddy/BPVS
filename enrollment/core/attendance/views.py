@@ -1,4 +1,4 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.shortcuts import render, get_object_or_404
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
@@ -10,7 +10,7 @@ from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from academics.models import Subject, Course, Timetable, AuditLog
 from accounts.models import User
-from datetime import datetime
+from datetime import datetime, timedelta
 import pytz
 
 
@@ -52,24 +52,39 @@ def mark_attendance(request):
         current_time = now.time()
         today = now.date()
 
-        # Find active class from timetable
-        active_class = Timetable.objects.filter(
-            course=student.course,
-            day=current_day,
-            start_time__lte=current_time,
-            end_time__gte=current_time
-        ).select_related("subject", "lecturer", "course").first()
+        # Find active attendance session
+        session = AttendanceSession.objects.filter(
+            timetable__course=student.course,
+            timetable__day=current_day,
+            date=today,
+            is_active=True
+        ).select_related("timetable__subject", "timetable__lecturer", "timetable__course").first()
 
-        if not active_class:
+        if not session:
             return JsonResponse({
-                "status": "no_class",
-                "message": "No active class right now"
+                "status": "no_session",
+                "message": "Attendance session not active"
+            })
+
+        timetable = session.timetable
+
+        # Auto close session if timer expired
+        session_end_time = session.started_at + timedelta(minutes=session.timer_minutes)
+
+        if now > session_end_time:
+            session.is_active = False
+            session.ended_at = now
+            session.save()
+
+            return JsonResponse({
+                "status": "closed",
+                "message": "Attendance session expired"
             })
 
         # Check duplicate attendance
         if AttendanceRecord.objects.filter(
             student=student,
-            subject=active_class.subject,
+            subject=timetable.subject,
             attendance_date=today
         ).exists():
             return JsonResponse({
@@ -80,15 +95,15 @@ def mark_attendance(request):
         # Create attendance
         AttendanceRecord.objects.create(
             student=student,
-            subject=active_class.subject,
-            lecturer=active_class.lecturer,
-            course=active_class.course,
+            subject=timetable.subject,
+            lecturer=timetable.lecturer,
+            course=timetable.course,
             attendance_date=today
         )
 
         return JsonResponse({
             "status": "success",
-            "message": f"Attendance marked for {active_class.subject.name}"
+            "message": f"Attendance marked for {timetable.subject.name}"
         })
 
     except User.DoesNotExist:
